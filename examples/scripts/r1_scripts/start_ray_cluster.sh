@@ -1,10 +1,9 @@
 #!/bin/bash
 
-# 清理现有Ray进程和缓存
+# 清理当前用户的Ray进程和缓存
 cleanup_ray() {
     echo "Cleaning up Ray..."
-    ray stop
-    pkill -9 ray
+    ps aux | grep "ray:::" | grep "$(whoami)" | grep -v grep | awk '{print $2}' | xargs -r kill -9
     rm -rf /tmp/ray/*
     rm -rf ~/.cache/ray/*
     rm -rf /data/vayu/train/ray/*
@@ -17,10 +16,10 @@ start_head() {
     cleanup_ray
     ray start --head \
         --node-ip-address=$head_ip \
-        --port=6379 \
+        --port=16379 \
+        --dashboard-port=18265 \
         --redis-password="123456" \
         --num-gpus=8 \
-        --dashboard-port=8265 \
         --temp-dir=/data/vayu/train/ray
 }
 
@@ -30,7 +29,7 @@ start_worker() {
     echo "Starting Ray worker node, connecting to $head_ip"
     cleanup_ray
     ray start \
-        --address=$head_ip:6379 \
+        --address=$head_ip:16379 \
         --redis-password="123456" \
         --num-gpus=8 \
         --temp-dir=/data/vayu/train/ray

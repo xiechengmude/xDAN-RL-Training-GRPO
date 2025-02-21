@@ -22,6 +22,7 @@
 ## 训练脚本说明
 
 主要训练脚本：
+- `start_ray_cluster.sh`: Ray集群启动脚本
 - `xDAN-L2-RL-32b-Instruct-0220-nodes.sh`: 32B模型双节点训练脚本
 - `xDAN-L1-Edge-7b-Math-RL-0220.sh`: 7B模型训练脚本
 - `xDAN-L1-VL-RL-Vision-0220.sh`: 视觉模型训练脚本
@@ -41,7 +42,7 @@ cd /data/vayu/train/
 mkdir -p ray
 ```
 
-### 2. 启动训练
+### 2. 启动Ray集群
 
 #### 2.1 在主节点（gpu005）上：
 
@@ -49,8 +50,8 @@ mkdir -p ray
 # 1. 进入项目目录
 cd /data/vayu/train/xDAN-RL-Training-GRPO
 
-# 2. 启动主节点
-./examples/scripts/r1_scripts/xDAN-L2-RL-32b-Instruct-0220-nodes.sh head gpu005
+# 2. 启动Ray主节点
+./examples/scripts/r1_scripts/start_ray_cluster.sh head gpu005
 ```
 
 #### 2.2 在次节点（gpu004）上：
@@ -59,18 +60,26 @@ cd /data/vayu/train/xDAN-RL-Training-GRPO
 # 1. 进入项目目录
 cd /data/vayu/train/xDAN-RL-Training-GRPO
 
-# 2. 启动次节点
-./examples/scripts/r1_scripts/xDAN-L2-RL-32b-Instruct-0220-nodes.sh worker gpu005
+# 2. 启动Ray次节点
+./examples/scripts/r1_scripts/start_ray_cluster.sh worker gpu005
 ```
 
-### 3. 验证集群状态
+### 3. 启动训练
+
+在主节点（gpu005）上运行训练脚本：
+
+```bash
+./examples/scripts/r1_scripts/xDAN-L2-RL-32b-Instruct-0220-nodes.sh
+```
+
+### 4. 验证集群状态
 
 在任一节点上运行：
 ```bash
-ray status
+ray status --address=gpu005:16379
 ```
 
-应该能看到两个节点都已加入集群。
+应该能看到两个节点都已加入集群，每个节点显示8个可用GPU。
 
 ## 训练配置说明
 
@@ -78,7 +87,7 @@ ray status
 - 参考模型（Reference Model）：2节点，每节点4 GPU
 - Actor模型：2节点，每节点4 GPU
 - vLLM引擎：2引擎，每引擎4卡张量并行
-- 总计使用：8张GPU（分布在两个节点上）
+- 总计使用：16张GPU（分布在两个节点上）
 
 主要参数：
 ```bash
@@ -90,41 +99,43 @@ ray status
 --vllm_tensor_parallel_size 4   # 每个引擎的张量并行度
 ```
 
+## 端口配置
+
+Ray集群使用以下端口：
+- Ray主端口：16379（默认6379）
+- Dashboard端口：18265（默认8265）
+
+这些非标准端口的使用可以避免与其他用户的Ray实例冲突。
+
 ## 错误处理
 
 如果遇到启动问题：
 
-1. 清理Ray进程和缓存：
+1. 清理Ray进程：
 ```bash
-ray stop
-pkill -9 ray
-rm -rf /tmp/ray/*
-rm -rf ~/.cache/ray/*
-rm -rf /data/vayu/train/ray/*
+# 只清理当前用户的Ray进程
+ps aux | grep "ray:::" | grep "$(whoami)" | grep -v grep | awk '{print $2}' | xargs -r kill -9
 ```
 
 2. 检查网络连接：
 ```bash
-ping gpu005  # 在gpu004上执行
-ping gpu004  # 在gpu005上执行
+# 测试节点间连接
+ping gpu004  # 在gpu005上运行
+ping gpu005  # 在gpu004上运行
 ```
 
 3. 检查端口占用：
 ```bash
-netstat -tunlp | grep 6379  # Ray默认端口
-netstat -tunlp | grep 8265  # Dashboard端口
+# 检查Ray端口是否被占用
+lsof -i :16379
+lsof -i :18265
 ```
 
-## 监控
+## 注意事项
 
-- Ray Dashboard: http://gpu005:8265
-- 训练日志：`./ckpts/xDAN-L2-RL-32B-Instruct/`
-- Reward Model日志：`./ckpts/xDAN-L2-RL-32B-Instruct/remote_rm.log`
-
-## 停止训练
-
-在两个节点上都运行：
-```bash
-ray stop
-pkill -9 ray
-```
+1. 确保两个节点上的代码版本一致
+2. 训练前检查数据集和模型文件是否就绪
+3. 建议使用tmux或screen运行长时间训练任务
+4. 定期检查训练日志和模型保存点
+5. 集群启动脚本只会清理当前用户的Ray进程，不会影响其他用户
+6. 使用非标准端口可以避免与其他用户的Ray实例冲突
