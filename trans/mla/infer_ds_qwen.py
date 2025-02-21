@@ -1,6 +1,13 @@
 from transformers import AutoTokenizer, AutoModelForCausalLM
 import torch
 from qwen2.modeling_qwen2_v1 import Qwen2ForCausalLM
+import os
+import sys
+
+# Remove the local deepspeed from sys.path if it exists
+current_dir = os.path.dirname(os.path.abspath(__file__))
+if current_dir in sys.path:
+    sys.path.remove(current_dir)
 
 ds_path = "/data/vayu/train/models/DeepSeek-R1-Distill-Qwen-32B"
 
@@ -25,12 +32,17 @@ for name,module in model.named_modules():
         module.weight.data = torch.stack([torch.eye(kv_heads*head_dim).reshape(kv_heads, head_dim, kv_heads*head_dim)]*kv_groups,dim=1).reshape(hidden_size, kv_heads*head_dim).contiguous().to(module.weight.data.device,module.weight.data.dtype)
 
 # 保存修改后的模型和tokenizer
-import os
 save_dir = "saves"
 model_name = "qwen_eye_matrix_kv_proj"  # 反映了对k_up_proj和v_up_proj使用eye matrix的改动
 save_path = os.path.join(save_dir, model_name)
 os.makedirs(save_path, exist_ok=True)
-model.save_pretrained(save_path)
+
+# 获取模型的state_dict并保存
+state_dict = model.state_dict()
+torch.save(state_dict, os.path.join(save_path, "pytorch_model.bin"))
+
+# 保存config和tokenizer
+model.config.save_pretrained(save_path)
 tokenizer.save_pretrained(save_path)
 print(f"Model and tokenizer saved to {save_path}")
 
