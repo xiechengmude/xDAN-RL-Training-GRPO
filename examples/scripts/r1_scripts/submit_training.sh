@@ -15,7 +15,7 @@ HEAD_IP=$1
 
 # 检查Ray集群状态
 echo "Checking Ray cluster status..."
-if ! ray status --address="$HEAD_IP:6379" 2>/dev/null | grep -q "2 node(s) in total"; then
+if ! ray status --address="$HEAD_IP:8100" 2>/dev/null | grep -q "2 node(s) in total"; then
     echo "Error: Ray cluster is not ready. Make sure both nodes are running."
     exit 1
 fi
@@ -29,7 +29,7 @@ fi
 
 # 提交训练任务
 echo "Submitting training job..."
-ray job submit --address="http://$HEAD_IP:8265" \
+ray job submit --address="http://$HEAD_IP:8101" \
    --runtime-env-json='{"working_dir": "/data/vayu/train/xDAN-RL-Training-GRPO"}' \
    -- python3 -m openrlhf.cli.train_ppo_ray \
    --ref_num_nodes 2 \
@@ -73,4 +73,4 @@ ray job submit --address="http://$HEAD_IP:8265" \
    --save_hf_ckpt \
    --use_wandb $SAVE_PATH/$MODEL_CPK_NAME/logs
 
-echo "Training job submitted. Check Ray dashboard at http://$HEAD_IP:8265"
+echo "Training job submitted. Check Ray dashboard at http://$HEAD_IP:8101"
