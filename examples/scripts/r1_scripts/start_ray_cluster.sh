@@ -16,8 +16,8 @@ start_head() {
     cleanup_ray
     ray start --head \
         --node-ip-address=$head_ip \
-        --port=16379 \
-        --dashboard-port=18265 \
+        --port=8100 \
+        --dashboard-port=8101 \
         --redis-password="123456" \
         --num-gpus=8 \
         --temp-dir=/data/vayu/train/ray
@@ -29,7 +29,7 @@ start_worker() {
     echo "Starting Ray worker node, connecting to $head_ip"
     cleanup_ray
     ray start \
-        --address=$head_ip:16379 \
+        --address=$head_ip:8100 \
         --redis-password="123456" \
         --num-gpus=8 \
         --temp-dir=/data/vayu/train/ray
@@ -38,7 +38,7 @@ start_worker() {
 # 检查Ray集群状态
 check_cluster() {
     echo "Checking Ray cluster status..."
-    ray status
+    ray status --address=$1:8100
 }
 
 # 使用说明
@@ -73,7 +73,7 @@ main() {
 
     # 等待Ray启动
     sleep 5
-    check_cluster
+    check_cluster $ip
 }
 
 main "$@"

@@ -76,7 +76,7 @@ cd /data/vayu/train/xDAN-RL-Training-GRPO
 
 在任一节点上运行：
 ```bash
-ray status --address=gpu005:16379
+ray status --address=gpu005:8100
 ```
 
 应该能看到两个节点都已加入集群，每个节点显示8个可用GPU。
@@ -102,8 +102,8 @@ ray status --address=gpu005:16379
 ## 端口配置
 
 Ray集群使用以下端口：
-- Ray主端口：16379（默认6379）
-- Dashboard端口：18265（默认8265）
+- Ray主端口：8100（默认6379）
+- Dashboard端口：8101（默认8265）
 
 这些非标准端口的使用可以避免与其他用户的Ray实例冲突。
 
@@ -127,8 +127,8 @@ ping gpu005  # 在gpu004上运行
 3. 检查端口占用：
 ```bash
 # 检查Ray端口是否被占用
-lsof -i :16379
-lsof -i :18265
+lsof -i :8100
+lsof -i :8101
 ```
 
 ## 注意事项
