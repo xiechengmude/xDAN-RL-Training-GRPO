@@ -46,8 +46,8 @@ check_cluster() {
 usage() {
     echo "Usage: $0 [head|worker] IP_ADDRESS"
     echo "Examples:"
-    echo "  Start head node:   $0 head 192.168.1.100"
-    echo "  Start worker node: $0 worker 192.168.1.100"
+    echo "  Start head node:   $0 head gpu005"
+    echo "  Start worker node: $0 worker gpu005"
     exit 1
 }
 
