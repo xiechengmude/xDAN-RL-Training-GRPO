@@ -12,17 +12,19 @@ mkdir -p "${SAVE_PATH}/${MODEL_CPK_NAME}/tensorboard"
 # ray start --head \
 #     --num-gpus 8 \
 #     --resources='{"head_node": 1}' \
-#     --node-ip-address 0.0.0.0 \
-#     --temp-dir /data/vayu/train/ray
+#     --node-ip-address 10.11.50.33 \
+#     --port=6379 \
+#     --temp-dir /data/vayu/train/ray \
+#     --object-store-memory=100000000000
 
 ray job submit --address="http://127.0.0.1:8265" \
    --runtime-env-json='{"working_dir": "/data/vayu/train/xDAN-RL-Training-GRPO", "resources": {"head_node": 1}}' \
    -- python3 -m openrlhf.cli.train_ppo_ray \
-   --ref_num_nodes 2 \
-   --ref_num_gpus_per_node 4 \
+   --ref_num_nodes 1 \
+   --ref_num_gpus_per_node 8 \
    --remote_rm_url http://127.0.0.1:5000/get_reward \
-   --actor_num_nodes 2 \
-   --actor_num_gpus_per_node 4 \
+   --actor_num_nodes 1 \
+   --actor_num_gpus_per_node 8 \
    --vllm_num_engines 2 \
    --vllm_tensor_parallel_size 4 \
    --colocate_all_models \
