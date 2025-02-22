@@ -92,6 +92,9 @@ def verify_math(input_queue, output_queue):
 
         output_queue.put(reward)
 
+@app.route("/health")
+def health_check():
+    return jsonify({"status": "healthy"}), 200
 
 @app.route("/get_reward", methods=["POST"])
 def get_reward():
