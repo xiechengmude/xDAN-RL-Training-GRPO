@@ -1,144 +1,184 @@
-import argparse
 import json
 import os
-from flask import Flask, request, jsonify
-from typing import List, Dict, Any, Union
+import random
+import re
+from argparse import ArgumentParser
+from multiprocessing import Process, Queue
+
+import Levenshtein
+from flask import Flask, jsonify, request
+from latex2sympy2_extended import NormalizationConfig
+from math_verify import LatexExtractionConfig, parse, verify
 
 app = Flask(__name__)
 
-class MathVerifier:
-    def __init__(self, dataset_path: str, prompt_template: str = "chatml", input_key: str = "message"):
-        """初始化数学验证器
+problem_to_answer = {}
 
-        Args:
-            dataset_path: 训练数据集路径
-            prompt_template: 提示模板类型
-            input_key: 输入消息的key
-        """
-        self.dataset_path = dataset_path
-        self.prompt_template = prompt_template
-        self.input_key = input_key
-        self.examples = self._load_dataset()
-        
-    def _load_dataset(self) -> List[Dict[str, Any]]:
-        """加载数据集"""
-        with open(self.dataset_path, 'r', encoding='utf-8') as f:
-            return json.load(f)
-    
-    def _verify_format(self, messages: List[Dict[str, str]]) -> bool:
-        """验证消息格式是否正确
 
-        Args:
-            messages: 消息列表
+def get_response_from_query(q: str):
+    ends_of_sentence = ["<|im_end|>", "<｜end▁of▁sentence｜>", "<|endoftext|>"]
+    pos = re.search(response_prefix, q)
+    if pos is None:
+        return None
+    response = q[pos.end() :]
+    for e in ends_of_sentence:
+        response = response.replace(e, "")
+    return response.strip()
 
-        Returns:
-            bool: 格式是否正确
-        """
-        if not isinstance(messages, list) or len(messages) < 2:
-            return False
-            
-        # 检查消息格式
-        for msg in messages:
-            if not isinstance(msg, dict) or 'from' not in msg or 'value' not in msg:
-                return False
-            if msg['from'] not in ['user', 'assistant']:
-                return False
-                
-        # 检查最后一条是否是assistant的回答
-        if messages[-1]['from'] != 'assistant':
-            return False
-            
-        return True
-    
-    def _verify_math_content(self, response: str) -> float:
-        """验证数学内容的质量
 
-        Args:
-            response: assistant的回答
+def verify_format(content):
+    """
+    Verify if the string meets the format requirements:
+    - Must start with <think> and end with </answer>
+    - Must contain exactly one pair of <think>...</think> and <answer>...</answer> tags
+    - No extra characters allowed between </think> and <answer> tags
+    """
+    think_count = content.count("<think>")
+    answer_count = content.count("<answer>")
+    return bool(re.match(format_pattern, content, re.DOTALL)) and think_count == 1 and answer_count == 1
 
-        Returns:
-            float: 质量分数 (0-1)
-        """
-        score = 0.0
-        
-        # 检查是否包含思考过程
-        if '<think>' in response and '</think>' in response:
-            score += 0.3
-            
-        # 检查是否有清晰的步骤
-        if any(str(i) + '.' in response for i in range(1, 10)):
-            score += 0.2
-            
-        # 检查是否有最终答案
-        if '\\boxed{' in response and '}' in response:
-            score += 0.3
-            
-        # 检查LaTeX格式
-        if '\\' in response and '{' in response and '}' in response:
-            score += 0.2
-            
-        return min(1.0, score)
 
-    def get_reward(self, messages: List[Dict[str, str]]) -> Dict[str, Union[float, str]]:
-        """获取回答的奖励分数
 
-        Args:
-            messages: 消息列表
+def find_similar_problem(problem):
+    max_sim = -1
+    target_problem = None
+    for p in problem_to_answer.keys():
+        sim = Levenshtein.ratio(problem, p)
+        if sim > max_sim:
+            max_sim = sim
+            target_problem = p
+    return target_problem
 
-        Returns:
-            Dict: 包含分数和反馈的字典
-        """
-        # 验证格式
-        if not self._verify_format(messages):
-            return {
-                'score': 0.0,
-                'feedback': 'Invalid message format'
-            }
-        
-        # 获取assistant的回答
-        response = messages[-1]['value']
-        
-        # 计算质量分数
-        score = self._verify_math_content(response)
-        
-        return {
-            'score': score,
-            'feedback': f'Response quality score: {score:.2f}'
-        }
 
-@app.route('/get_reward', methods=['POST'])
+def verify_math(input_queue, output_queue):
+    while True:
+        content, sol = input_queue.get()
+        gold_parsed = parse(
+            sol,
+            extraction_mode="first_match",
+            extraction_config=[LatexExtractionConfig()],
+        )
+        if len(gold_parsed) != 0:
+            # We require the answer to be provided in correct latex (no malformed operators)
+            answer_parsed = parse(
+                content,
+                extraction_config=[
+                    LatexExtractionConfig(
+                        normalization_config=NormalizationConfig(
+                            nits=False,
+                            malformed_operators=False,
+                            basic_latex=True,
+                            equations=True,
+                            boxed=True,
+                            units=True,
+                        ),
+                        # Ensures that boxed is tried first
+                        boxed_match_priority=0,
+                        try_extract_without_anchor=False,
+                    )
+                ],
+                extraction_mode="first_match",
+            )
+            # Reward 1 if the content is the same as the ground truth, 0 otherwise
+            try:
+                reward = float(verify(answer_parsed, gold_parsed))
+            except Exception as e:
+                reward = 1.0
+                print("Failed to verify: ", e)
+        else:
+            # If the gold solution is not parseable, we reward 1 to skip this example
+            reward = 1.0
+            print("Failed to parse gold solution: ", sol)
+
+        output_queue.put(reward)
+
+
+@app.route("/get_reward", methods=["POST"])
 def get_reward():
-    """处理获取奖励的HTTP请求"""
-    try:
-        data = request.get_json()
-        if not data or 'messages' not in data:
-            return jsonify({'error': 'Invalid request data'}), 400
+    # 获取请求中的 JSON 数据
+    data = request.get_json()
+    # 检查是否有 'query' 字段
+    if "query" not in data:
+        return jsonify({"error": "queries field is required"}), 400
+    rewards = []
+    for q,problem in zip(data["query"],data["prompts"]):
+        if problem is None:
+            return jsonify({"error": f"problem not found from {q}"}), 400
+        if problem not in problem_to_answer:
+            # This should not happen
+            print(f"problem not exists: {problem}")
+            problem = find_similar_problem(problem)
+        answer = problem_to_answer[problem]
+        response = get_response_from_query(q) or q
+        if response is None:
+            return jsonify({"error": f"response not found from {q}"}), 400
+        format_reward = float(verify_format(response))
+        input_queue.put((response, answer))
+        acc_reward = float(output_queue.get())
+        do_print = random.randint(1, 20) == 1
+        if do_print:
+            info=f"Query: {q}\n\nProblem: {problem}\n\n Answer: {answer}\n\n Response: {response}\n\n Format Reward: {format_reward}\n\n Acc Reward: {acc_reward}\n\n"
+            info = re.sub(r"<\|.*?\|>","",info)
+            print(info)
             
-        reward = verifier.get_reward(data['messages'])
-        return jsonify(reward)
-        
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        rewards.append(0.5 * format_reward + acc_reward)
+    # 返回包含 rewards 的响应
+    return jsonify({"rewards": rewards})
 
-def main():
-    """主函数"""
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--dataset', type=str, required=True, help='Path to the dataset file')
-    parser.add_argument('--prompt-template', type=str, required=True, help='Prompt template type')
-    parser.add_argument('--input_key', type=str, default='message', help='Key for input messages')
-    
+
+if __name__ == "__main__":
+    parser = ArgumentParser()
+    parser.add_argument(
+        "--dataset", type=str, default=None, help="Datasets to use (comma separated)", required=True
+    )
+    parser.add_argument(
+        "--prompt-template", type=str, default=None, help="Prompt template", required=True
+    )
+    parser.add_argument(
+        "--input_key", type=str, default="prompt", help="The key name of prompt."
+    )
     args = parser.parse_args()
     
-    global verifier
-    verifier = MathVerifier(
-        dataset_path=args.dataset,
-        prompt_template=args.prompt_template,
-        input_key=args.input_key
-    )
-    
-    # 从环境变量获取端口
-    port = int(os.environ.get('REWARD_MODEL_PORT', 5001))
-    app.run(host='0.0.0.0', port=port)
+    # Split dataset paths and load all datasets
+    dataset = []
+    for dataset_path in args.dataset.split(','):
+        dataset_path = dataset_path.strip()
+        if dataset_path.endswith("json"):
+            with open(dataset_path, "r") as f:
+                dataset.extend(json.load(f))
+        elif dataset_path.endswith("jsonl"):
+            with open(dataset_path, "r") as f:
+                dataset.extend([json.loads(l) for l in f.readlines()])
+        else:
+            raise ValueError(f"Unsupported file format for dataset: {dataset_path}")
 
-if __name__ == '__main__':
-    main()
+    format_pattern = r"^<think>(?:(?!</think>).)*</think><answer>(?:(?!</answer>).)*</answer>\Z"
+
+    if args.prompt_template=="chatml":
+        problem_pattern = r"<\|im_start\|>user\n(.*?)<\|im_end\|>"
+        response_prefix = r"<\|im_start\|>assistant\n"
+    elif args.prompt_template=="qwen1":
+        problem_pattern = r"｜User｜>(.*?)<｜Assistant｜>"
+        response_prefix = r"<｜Assistant｜>"
+    elif args.prompt_template=="base":
+        problem_pattern = r"User: (.*?)\n\nAssistant:"
+        response_prefix = r"Assistant: "
+    else:
+        raise ValueError(f"Unknown chat format: {args.dataset}")
+    print("load dataset success")
+    for item in dataset:
+        problem = item[args.input_key]
+        answer = item["answer"].strip()
+        # we require the answer to be in latex format
+        if answer[0] != "$":
+            answer = "$" + answer + "$"
+        problem_to_answer[problem] = answer
+
+    # math_verify can only run in main thread
+    input_queue = Queue()
+    output_queue = Queue()
+    p = Process(target=verify_math, args=(input_queue, output_queue))
+    p.start()
+
+    app.run(host="0.0.0.0", port=5001, debug=False, use_reloader=False)
+    p.kill()

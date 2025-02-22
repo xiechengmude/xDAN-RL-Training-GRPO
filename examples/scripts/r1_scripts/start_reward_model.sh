@@ -25,9 +25,9 @@ echo "Reward model started. PID saved to ${SAVE_PATH}/${MODEL_CPK_NAME}/reward_m
 echo "Waiting 10 seconds for service to initialize..."
 sleep 10
 
-# 检查服务是否正常运行
-if curl -s http://127.0.0.1:5000/health_check > /dev/null; then
-    echo "Reward model service is running."
-else
-    echo "Warning: Reward model service might not be running properly."
+# 验证服务健康状态
+if ! curl -s http://localhost:5001/health > /dev/null; then
+    echo "Failed to start reward model service"
+    exit 1
 fi
+echo "Reward model service is healthy"
