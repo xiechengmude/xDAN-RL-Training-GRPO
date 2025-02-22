@@ -41,13 +41,6 @@ N_SAMPLES_PER_PROMPT=8         # 每个提示的采样数
 ACTOR_LR=5e-7                  # Actor学习率
 INIT_KL_COEF=0.02             # 初始KL系数
 
-# 检查reward model服务是否在运行
-if ! curl -s http://127.0.0.1:$REWARD_MODEL_PORT/health_check > /dev/null; then
-    echo "Error: Reward Model service is not running on gpu005"
-    echo "Please start it first using: ./start_reward_model.sh"
-    exit 1
-fi
-
 # 提交训练任务
 echo "Submitting training job..."
 RAY_ADDRESS="http://127.0.0.1:$RAY_DASHBOARD_PORT" ray job submit \
@@ -55,7 +48,7 @@ RAY_ADDRESS="http://127.0.0.1:$RAY_DASHBOARD_PORT" ray job submit \
     -- python3 -m openrlhf.cli.train_ppo_ray \
     --ref_num_nodes $REF_NUM_NODES \
     --ref_num_gpus_per_node $REF_GPUS_PER_NODE \
-    --remote_rm_url "http://gpu005:$REWARD_MODEL_PORT/get_reward" \
+    --remote_rm_url "http://127.0.0.1:$REWARD_MODEL_PORT/get_reward" \
     --actor_num_nodes $ACTOR_NUM_NODES \
     --actor_num_gpus_per_node $ACTOR_GPUS_PER_NODE \
     --vllm_num_engines $VLLM_NUM_ENGINES \
