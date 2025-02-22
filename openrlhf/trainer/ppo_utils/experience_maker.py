@@ -44,6 +44,7 @@ class Experience:
     advantages: (B, A)
     attention_mask: (B, S)
     action_mask: (B, A)
+    info: Optional[dict]
     kl: (B, A)
 
     "A" is the number of actions.
@@ -379,6 +380,7 @@ class NaiveExperienceMaker(ABC):
             action_mask,
             info,
             kl,
+            visual_inputs=visual_inputs
         )
 
     @torch.no_grad()
@@ -713,7 +715,7 @@ class RemoteExperienceMaker(NaiveExperienceMaker):
             action_mask,
             info,
             kl,
-            visual_inputs=visual inputs
+            visual_inputs=visual_inputs
         )
 
         self.actor.train()  # reset model state
