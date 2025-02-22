@@ -6,12 +6,13 @@ REWARD_MODEL_PORT=5001             # RM端口
 DATASET="/data/vayu/train/datasets/xDAN-Agentic-openMath-r1-chatml.json"
 MODEL_NAME="xDAN-L2-RL-32B-Instruct"
 PRETRAIN="/data/vayu/train/models/xDAN-L2-Qwen25-32b-Instruct"
+HOSTNAME="gpu005"
 
 # 检查是否在gpu005上运行
-if [ "$(hostname)" != "gpu005" ]; then
-    echo "Error: This script must be run on gpu005"
-    exit 1
-fi
+# if [ "$(hostname)" != "gpu005" ]; then
+#     echo "Error: This script must be run on gpu005"
+#     exit 1
+# fi
 
 # 训练参数配置
 REF_NUM_NODES=2                    # 参考模型节点数
@@ -48,7 +49,7 @@ RAY_ADDRESS="http://127.0.0.1:$RAY_DASHBOARD_PORT" ray job submit \
     -- python3 -m openrlhf.cli.train_ppo_ray \
     --ref_num_nodes $REF_NUM_NODES \
     --ref_num_gpus_per_node $REF_GPUS_PER_NODE \
-    --remote_rm_url "http://127.0.0.1:$REWARD_MODEL_PORT/get_reward" \
+    --remote_rm_url "http://$(HOSTNAME):$REWARD_MODEL_PORT/get_reward" \
     --actor_num_nodes $ACTOR_NUM_NODES \
     --actor_num_gpus_per_node $ACTOR_GPUS_PER_NODE \
     --vllm_num_engines $VLLM_NUM_ENGINES \

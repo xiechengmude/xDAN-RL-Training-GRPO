@@ -140,6 +140,9 @@ if __name__ == "__main__":
     parser.add_argument(
         "--input_key", type=str, default="prompt", help="The key name of prompt."
     )
+    parser.add_argument(
+        "--port", type=int, default=5001, help="Port to run the server on"
+    )
     args = parser.parse_args()
     
     # Split dataset paths and load all datasets
@@ -183,5 +186,5 @@ if __name__ == "__main__":
     p = Process(target=verify_math, args=(input_queue, output_queue))
     p.start()
 
-    app.run(host="0.0.0.0", port=5001, debug=False, use_reloader=False)
+    app.run(host="0.0.0.0", port=args.port, debug=False, use_reloader=False)
     p.kill()
