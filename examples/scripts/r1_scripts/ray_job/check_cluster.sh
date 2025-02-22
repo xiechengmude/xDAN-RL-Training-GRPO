@@ -20,15 +20,35 @@ fi
 
 # 检查Reward Model服务
 echo -e "\nChecking Reward Model service..."
-RESPONSE=$(curl -s -w "\n%{http_code}" http://127.0.0.1:$REWARD_MODEL_PORT/health)
-HTTP_CODE=$(echo "$RESPONSE" | tail -n1)
-BODY=$(echo "$RESPONSE" | head -n1)
 
-if [ "$HTTP_CODE" = "200" ] && echo "$BODY" | grep -q "healthy"; then
-    echo "Reward Model service is running"
+# 1. 检查健康状态
+HEALTH_RESPONSE=$(curl -s -w "\n%{http_code}" http://127.0.0.1:$REWARD_MODEL_PORT/health)
+HEALTH_CODE=$(echo "$HEALTH_RESPONSE" | tail -n1)
+HEALTH_BODY=$(echo "$HEALTH_RESPONSE" | head -n1)
+
+if [ "$HEALTH_CODE" != "200" ] || ! echo "$HEALTH_BODY" | grep -q "healthy"; then
+    echo "Warning: Reward Model service health check failed (HTTP $HEALTH_CODE)"
+    echo "Response: $HEALTH_BODY"
+    exit 1
+fi
+
+# 2. 验证数学验证功能
+echo "Testing math verification..."
+TEST_DATA='{
+    "query": ["\nuser\nWhat is 1+1?\n\nassistant\nLet me solve this step by step:\n<think>\n1. This is a basic addition problem\n2. Adding 1 and 1 together\n</think>\n<answer>The answer is $2$</answer>\n"],
+    "prompts": ["\nuser\nWhat is 1+1?\n\n"]
+}'
+
+VERIFY_RESPONSE=$(curl -s -w "\n%{http_code}" -H "Content-Type: application/json" -d "$TEST_DATA" http://127.0.0.1:$REWARD_MODEL_PORT/get_reward)
+VERIFY_CODE=$(echo "$VERIFY_RESPONSE" | tail -n1)
+VERIFY_BODY=$(echo "$VERIFY_RESPONSE" | head -n1)
+
+if [ "$VERIFY_CODE" = "200" ] && echo "$VERIFY_BODY" | grep -q "rewards"; then
+    echo "Reward Model service is running and functioning properly"
 else
-    echo "Warning: Reward Model service is not running properly (HTTP $HTTP_CODE)"
-    echo "Response: $BODY"
+    echo "Warning: Reward Model service verification failed (HTTP $VERIFY_CODE)"
+    echo "Response: $VERIFY_BODY"
+    exit 1
 fi
 
 # 检查GPU可用性
