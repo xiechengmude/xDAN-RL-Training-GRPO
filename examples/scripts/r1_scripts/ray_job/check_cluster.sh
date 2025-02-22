@@ -20,11 +20,15 @@ fi
 
 # 检查Reward Model服务
 echo -e "\nChecking Reward Model service..."
-curl -s http://127.0.0.1:$REWARD_MODEL_PORT/health_check
-if [ $? -eq 0 ]; then
+RESPONSE=$(curl -s -w "\n%{http_code}" http://127.0.0.1:$REWARD_MODEL_PORT/health)
+HTTP_CODE=$(echo "$RESPONSE" | tail -n1)
+BODY=$(echo "$RESPONSE" | head -n1)
+
+if [ "$HTTP_CODE" = "200" ] && echo "$BODY" | grep -q "healthy"; then
     echo "Reward Model service is running"
 else
-    echo "Warning: Reward Model service is not running"
+    echo "Warning: Reward Model service is not running properly (HTTP $HTTP_CODE)"
+    echo "Response: $BODY"
 fi
 
 # 检查GPU可用性
