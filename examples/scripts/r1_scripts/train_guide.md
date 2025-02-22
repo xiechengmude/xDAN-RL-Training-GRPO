@@ -76,10 +76,12 @@ ray start \
 ```bash
 cd /data/vayu/train/xDAN-RL-Training-GRPO
 
-REWARD_MODEL_PORT=5001  # 避免默认5000端口
+# 基础配置
+REWARD_MODEL_PORT=5001             # 避免默认5000端口
+DATASET="/data/vayu/train/datasets/xDAN-Agentic-openMath-r1-chatml.json"
 
 python -m openrlhf.models.remote_rm.math_verifier \
-    --dataset /data/vayu/train/datasets/xDAN-Agentic-openMath-r1-chatml.json \
+    --dataset $DATASET \
     --input_key message \
     --prompt-template chatml \
     --port $REWARD_MODEL_PORT &
@@ -97,57 +99,112 @@ curl http://127.0.0.1:$REWARD_MODEL_PORT/health_check
 ```bash
 cd /data/vayu/train/xDAN-RL-Training-GRPO
 
-# 使用之前设置的Dashboard端口
-RAY_DASHBOARD_PORT=8101
-REWARD_MODEL_PORT=5001
+# 基础配置
+RAY_DASHBOARD_PORT=8101            # Dashboard端口
+REWARD_MODEL_PORT=5001             # RM端口
+DATASET="/data/vayu/train/datasets/xDAN-Agentic-openMath-r1-chatml.json"
+MODEL_NAME="xDAN-L2-RL-32B-Instruct"
+PRETRAIN="/data/vayu/train/models/xDAN-L2-Qwen25-32b-Instruct"
 
-RAY_ADDRESS="http://127.0.0.1:$RAY_DASHBOARD_PORT" ray job submit --working-dir . -- python3 -m openrlhf.cli.train_ppo_ray \
-   --ref_num_nodes 2 \
-   --ref_num_gpus_per_node 4 \
-   --remote_rm_url "http://127.0.0.1:$REWARD_MODEL_PORT/get_reward" \
-   --actor_num_nodes 2 \
-   --actor_num_gpus_per_node 4 \
-   --vllm_num_engines 2 \
-   --vllm_tensor_parallel_size 4 \
-   --colocate_all_models \
-   --vllm_enable_sleep \
-   --vllm_gpu_memory_utilization 0.85 \
-   --vllm_sync_backend gloo \
-   --enable_prefix_caching \
-   --pretrain /data/vayu/train/models/xDAN-L2-Qwen25-32b-Instruct \
-   --save_path ./ckpts/xDAN-L2-RL-32B-Instruct \
-   --micro_train_batch_size 2 \
-   --train_batch_size 128 \
-   --micro_rollout_batch_size 4 \
-   --rollout_batch_size 256 \
-   --temperature 1 \
-   --n_samples_per_prompt 8 \
-   --max_epochs 1 \
-   --num_episodes 30 \
-   --prompt_max_len 4096 \
-   --max_samples 100000 \
-   --generate_max_len 4096 \
-   --advantage_estimator rloo \
-   --zero_stage 3 \
-   --adam_offload \
-   --bf16 \
-   --actor_learning_rate 5e-7 \
-   --init_kl_coef 0.02 \
-   --prompt_data /data/vayu/train/datasets/xDAN-Agentic-openMath-r1-chatml.json \
-   --input_key message \
-   --normalize_reward \
-   --flash_attn \
-   --gradient_checkpointing \
-   --save_steps 10 \
-   --ckpt_path ./ckpts/xDAN-L2-RL-32B-Instruct/ckpt --save_hf_ckpt
+# 训练参数配置
+REF_NUM_NODES=2                    # 参考模型节点数
+REF_GPUS_PER_NODE=4               # 每节点参考模型GPU数
+ACTOR_NUM_NODES=2                  # Actor模型节点数
+ACTOR_GPUS_PER_NODE=4             # 每节点Actor模型GPU数
+VLLM_NUM_ENGINES=2                # vLLM引擎数
+VLLM_TP_SIZE=4                    # 张量并行大小
+VLLM_MEM_UTIL=0.85               # GPU内存利用率
+
+# 批处理参数
+MICRO_TRAIN_BATCH=2              # 微训练批次大小
+TRAIN_BATCH=128                  # 训练批次大小
+MICRO_ROLLOUT_BATCH=4           # 微滚动批次大小
+ROLLOUT_BATCH=256               # 滚动批次大小
+
+# 训练控制参数
+MAX_EPOCHS=1                     # 最大训练轮数
+NUM_EPISODES=30                  # 训练回合数
+PROMPT_MAX_LEN=4096             # 提示最大长度
+MAX_SAMPLES=100000              # 最大样本数
+GEN_MAX_LEN=4096               # 生成最大长度
+TEMPERATURE=1                   # 采样温度
+N_SAMPLES_PER_PROMPT=8         # 每个提示的采样数
+
+# 优化器参数
+ACTOR_LR=5e-7                  # Actor学习率
+INIT_KL_COEF=0.02             # 初始KL系数
+
+RAY_ADDRESS="http://127.0.0.1:$RAY_DASHBOARD_PORT" ray job submit \
+    --working-dir="." \
+    -- python3 -m openrlhf.cli.train_ppo_ray \
+    --ref_num_nodes $REF_NUM_NODES \
+    --ref_num_gpus_per_node $REF_GPUS_PER_NODE \
+    --remote_rm_url "http://127.0.0.1:$REWARD_MODEL_PORT/get_reward" \
+    --actor_num_nodes $ACTOR_NUM_NODES \
+    --actor_num_gpus_per_node $ACTOR_GPUS_PER_NODE \
+    --vllm_num_engines $VLLM_NUM_ENGINES \
+    --vllm_tensor_parallel_size $VLLM_TP_SIZE \
+    --colocate_all_models \
+    --vllm_enable_sleep \
+    --vllm_gpu_memory_utilization $VLLM_MEM_UTIL \
+    --vllm_sync_backend gloo \
+    --enable_prefix_caching \
+    --pretrain $PRETRAIN \
+    --save_path "./ckpts/$MODEL_NAME" \
+    --micro_train_batch_size $MICRO_TRAIN_BATCH \
+    --train_batch_size $TRAIN_BATCH \
+    --micro_rollout_batch_size $MICRO_ROLLOUT_BATCH \
+    --rollout_batch_size $ROLLOUT_BATCH \
+    --temperature $TEMPERATURE \
+    --n_samples_per_prompt $N_SAMPLES_PER_PROMPT \
+    --max_epochs $MAX_EPOCHS \
+    --num_episodes $NUM_EPISODES \
+    --prompt_max_len $PROMPT_MAX_LEN \
+    --max_samples $MAX_SAMPLES \
+    --generate_max_len $GEN_MAX_LEN \
+    --advantage_estimator rloo \
+    --zero_stage 3 \
+    --adam_offload \
+    --bf16 \
+    --actor_learning_rate $ACTOR_LR \
+    --init_kl_coef $INIT_KL_COEF \
+    --prompt_data $DATASET \
+    --input_key message \
+    --normalize_reward \
+    --flash_attn \
+    --gradient_checkpointing \
+    --save_steps 10 \
+    --ckpt_path "./ckpts/$MODEL_NAME/ckpt" \
+    --save_hf_ckpt
 ```
 
 ## 训练配置说明
 
+### 1. 分布式配置
 - 参考模型（Reference Model）：2节点，每节点4 GPU
 - Actor模型：2节点，每节点4 GPU
 - vLLM引擎：2引擎，每引擎4卡张量并行
 - 总计使用：16张GPU（分布在两个节点上）
+
+### 2. 批处理参数
+- 微训练批次：2
+- 训练批次：128
+- 微滚动批次：4
+- 滚动批次：256
+
+### 3. 训练控制
+- 最大轮数：1
+- 训练回合：30
+- 提示最大长度：4096
+- 生成最大长度：4096
+- 最大样本数：100000
+
+### 4. 优化器设置
+- Actor学习率：5e-7
+- 初始KL系数：0.02
+- 使用Adam优化器
+- 使用BF16精度
+- 启用梯度检查点
 
 ## 常见问题处理
 
@@ -175,7 +232,8 @@ curl http://127.0.0.1:$REWARD_MODEL_PORT/health_check
 ```bash
 # 可以通过Ray dashboard查看：http://gpu005:8101
 # 或者查看本地日志文件：
-tail -f ./ckpts/xDAN-L2-RL-32B-Instruct/logs/*
+MODEL_NAME="xDAN-L2-RL-32B-Instruct"
+tail -f "./ckpts/$MODEL_NAME/logs/*"
 ```
 
 ## 安全注意事项
