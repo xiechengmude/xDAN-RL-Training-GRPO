@@ -22,8 +22,7 @@ echo "Starting Reward Model service on $(hostname):$REWARD_MODEL_PORT..."
 python -m openrlhf.models.remote_rm.math_verifier \
     --dataset $DATASET \
     --input_key message \
-    --prompt-template chatml \
-    --port $REWARD_MODEL_PORT &
+    --prompt-template chatml 
 
 # 保存进程ID
 echo $! > /tmp/reward_model.pid
