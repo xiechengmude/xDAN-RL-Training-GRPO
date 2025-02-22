@@ -20,15 +20,14 @@ ray job submit --address="http://127.0.0.1:8265" \
    -- python3 -m openrlhf.cli.train_ppo_ray \
    --ref_num_nodes 2 \
    --ref_num_gpus_per_node 4 \
-   --max_model_len 8192 \
    --remote_rm_url http://127.0.0.1:5000/get_reward \
    --actor_num_nodes 2 \
    --actor_num_gpus_per_node 4 \
-   --vllm_num_engines 4 \
+   --vllm_num_engines 2 \
    --vllm_tensor_parallel_size 4 \
    --colocate_all_models \
    --vllm_enable_sleep \
-   --vllm_gpu_memory_utilization 0.95 \
+   --vllm_gpu_memory_utilization 0.5 \
    --vllm_sync_backend gloo \
    --enable_prefix_caching \
    --pretrain $PRETRAIN_MODEL \
