@@ -7,9 +7,10 @@
 - 主节点：gpu005
 - 从节点：gpu004
 - 每节点8张GPU
-- Ray GCS端口：8100（默认6379）
-- Ray Dashboard端口：8101（默认8265）
-- Ray Client端口：8102（默认10001）
+- Ray GCS端口：8100（避免默认6379）
+- Ray Dashboard端口：8101（避免默认8265）
+- Ray Client端口：8102（避免默认10001）
+- Reward Model端口：5001（避免默认5000）
 - 临时目录：/data/vayu/train/ray/vayu_cluster
 - 存储目录：/data/vayu/train/ray/vayu_cluster/storage
 - 数据集：`/data/vayu/train/datasets/xDAN-Agentic-openMath-r1-chatml.json`
@@ -22,29 +23,28 @@
 ```bash
 cd /data/vayu/train/xDAN-RL-Training-GRPO
 
+# 基础配置
+RAY_PASSWORD="xdan_user_ray_2024"  # 简单固定密码
+RAY_GCS_PORT=8100                  # GCS端口(避免默认6379)
+RAY_DASHBOARD_PORT=8101            # Dashboard端口(避免默认8265)
+RAY_CLIENT_PORT=8102               # Client端口(避免默认10001)
+REWARD_MODEL_PORT=5001             # RM端口(避免默认5000)
+
 # 确保目录存在并设置权限
 mkdir -p /data/vayu/train/ray/vayu_cluster/storage
 chmod 700 /data/vayu/train/ray/vayu_cluster
 
-# 生成随机密码（每次启动集群时更新）
-RAY_PASSWORD=$(openssl rand -hex 16)
-echo "Ray cluster password: $RAY_PASSWORD"
-
 ray start --head \
-    --port=8100 \
-    --dashboard-port=8101 \
-    --ray-client-server-port=8102 \
+    --port=$RAY_GCS_PORT \
+    --dashboard-port=$RAY_DASHBOARD_PORT \
+    --ray-client-server-port=$RAY_CLIENT_PORT \
     --temp-dir=/data/vayu/train/ray/vayu_cluster \
     --storage=/data/vayu/train/ray/vayu_cluster/storage \
     --dashboard-host=0.0.0.0 \
     --num-gpus=8 \
     --disable-usage-stats \
-    --system-config='{"automatic_object_spilling_enabled":true,"object_spilling_config":{"type":"filesystem","params":{"directory_path":"/data/vayu/train/ray/vayu_cluster/spill"}}}' \
+    --system-config='{"automatic_object_spilling_enabled":true,"object_spilling_config":{"type":"filesystem","params":{"directory_path":"/data/vayu/train/ray/vayu_cluster/spill"}},"debug_mode":true}' \
     --redis-password="$RAY_PASSWORD"
-
-# 保存连接信息（仅当前用户可读）
-echo "$RAY_PASSWORD" > /data/vayu/train/ray/vayu_cluster/.ray_password
-chmod 600 /data/vayu/train/ray/vayu_cluster/.ray_password
 ```
 
 ## 2. 启动Ray Worker节点
@@ -54,14 +54,15 @@ chmod 600 /data/vayu/train/ray/vayu_cluster/.ray_password
 ```bash
 cd /data/vayu/train/xDAN-RL-Training-GRPO
 
+# 基础配置（与head节点相同）
+RAY_PASSWORD="xdan_user_ray_2024"
+RAY_GCS_PORT=8100
+
 # 确保目录存在
 mkdir -p /data/vayu/train/ray/vayu_cluster/storage
 
-# 读取Ray密码
-RAY_PASSWORD=$(cat /data/vayu/train/ray/vayu_cluster/.ray_password)
-
 ray start \
-    --address=gpu005:8100 \
+    --address=gpu005:$RAY_GCS_PORT \
     --temp-dir=/data/vayu/train/ray/vayu_cluster \
     --storage=/data/vayu/train/ray/vayu_cluster/storage \
     --num-gpus=8 \
@@ -74,15 +75,19 @@ ray start \
 
 ```bash
 cd /data/vayu/train/xDAN-RL-Training-GRPO
+
+REWARD_MODEL_PORT=5001  # 避免默认5000端口
+
 python -m openrlhf.models.remote_rm.math_verifier \
     --dataset /data/vayu/train/datasets/xDAN-Agentic-openMath-r1-chatml.json \
     --input_key message \
-    --prompt-template chatml &
+    --prompt-template chatml \
+    --port $REWARD_MODEL_PORT &
 ```
 
 等待几秒确保服务启动成功。可以通过以下命令检查服务状态：
 ```bash
-curl http://127.0.0.1:5000/health_check
+curl http://127.0.0.1:$REWARD_MODEL_PORT/health_check
 ```
 
 ## 4. 提交训练任务
@@ -91,10 +96,15 @@ curl http://127.0.0.1:5000/health_check
 
 ```bash
 cd /data/vayu/train/xDAN-RL-Training-GRPO
-RAY_ADDRESS='http://127.0.0.1:8101' ray job submit --working-dir . -- python3 -m openrlhf.cli.train_ppo_ray \
+
+# 使用之前设置的Dashboard端口
+RAY_DASHBOARD_PORT=8101
+REWARD_MODEL_PORT=5001
+
+RAY_ADDRESS="http://127.0.0.1:$RAY_DASHBOARD_PORT" ray job submit --working-dir . -- python3 -m openrlhf.cli.train_ppo_ray \
    --ref_num_nodes 2 \
    --ref_num_gpus_per_node 4 \
-   --remote_rm_url http://127.0.0.1:5000/get_reward \
+   --remote_rm_url "http://127.0.0.1:$REWARD_MODEL_PORT/get_reward" \
    --actor_num_nodes 2 \
    --actor_num_gpus_per_node 4 \
    --vllm_num_engines 2 \
@@ -149,12 +159,16 @@ ps aux | grep "ray:::" | grep "$(whoami)" | grep -v grep | awk '{print $2}' | xa
 
 2. 检查Ray集群状态：
 ```bash
-ray status --address=gpu005:8100
+# 使用之前设置的GCS端口
+RAY_GCS_PORT=8100
+ray status --address=gpu005:$RAY_GCS_PORT
 ```
 
 3. 检查Reward Model服务：
 ```bash
-curl http://127.0.0.1:5000/health_check
+# 使用之前设置的RM端口
+REWARD_MODEL_PORT=5001
+curl http://127.0.0.1:$REWARD_MODEL_PORT/health_check
 ```
 
 4. 查看训练日志：
@@ -173,20 +187,24 @@ chmod 700 /data/vayu/train/ray/vayu_cluster
 chmod 700 /data/vayu/train/ray/vayu_cluster/storage
 ```
 
-2. 密码管理
-```bash
-# 更新Ray集群密码
-RAY_PASSWORD=$(openssl rand -hex 16)
-echo "$RAY_PASSWORD" > /data/vayu/train/ray/vayu_cluster/.ray_password
-chmod 600 /data/vayu/train/ray/vayu_cluster/.ray_password
-```
+2. 端口配置
+- 使用非默认端口，避免与root用户或其他用户冲突：
+  * GCS: 8100 (避免默认6379)
+  * Dashboard: 8101 (避免默认8265)
+  * Client: 8102 (避免默认10001)
+  * Reward Model: 5001 (避免默认5000)
 
-3. 端口安全
-- 使用非默认端口（8100, 8101, 8102）
-- 避免使用常见端口（如6379, 8265, 10001）
-- 建议定期更换端口
+3. 密码管理
+- 使用简单固定密码：`xdan_user_ray_2024`
+- 确保head节点和worker节点使用相同的密码
+- 密码主要用于防止不同用户的Ray集群互相干扰
 
-4. 网络安全
+4. Debug模式
+- Ray集群默认启用debug模式
+- 可以在system-config中看到更详细的日志
+- 有助于排查问题
+
+5. 网络安全
 - Dashboard仅允许指定IP访问
 - 使用防火墙限制端口访问
 - 监控异常连接尝试

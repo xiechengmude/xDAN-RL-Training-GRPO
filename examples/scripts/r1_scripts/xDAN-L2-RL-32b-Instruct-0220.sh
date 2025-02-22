@@ -6,49 +6,51 @@ PRETRAIN_MODEL="/data/vayu/train/models/xDAN-L2-Qwen25-32B-Instruct"
 SAVE_PATH="./ckpts"
 CLUSTER_DIR="/data/vayu/train/ray/vayu_cluster"
 
+# 基础配置
+RAY_PASSWORD="xdan_user_ray_2024"  # 简单固定密码
+RAY_GCS_PORT=8100                  # GCS端口(默认6379)
+RAY_DASHBOARD_PORT=8101            # Dashboard端口(默认8265)
+RAY_CLIENT_PORT=8102               # Client端口(默认10001)
+REWARD_MODEL_PORT=5001             # RM端口(默认5000)
+
 # 创建必要的目录
 mkdir -p "${SAVE_PATH}/${MODEL_CPK_NAME}"/{logs,tensorboard}
 mkdir -p "${CLUSTER_DIR}"/{storage,spill}
 chmod 700 "${CLUSTER_DIR}" "${CLUSTER_DIR}"/{storage,spill}
 
-# 生成随机密码
-RAY_PASSWORD=$(openssl rand -hex 16)
-echo "$RAY_PASSWORD" > "${CLUSTER_DIR}/.ray_password"
-chmod 600 "${CLUSTER_DIR}/.ray_password"
-
-# 部署reward model服务（使用非默认端口5001）
+# 部署reward model服务
 python -m openrlhf.models.remote_rm.math_verifier \
     --dataset $DATASET \
     --input_key message \
     --prompt-template chatml \
-    --port 5001 \
+    --port $REWARD_MODEL_PORT \
     > "${SAVE_PATH}/${MODEL_CPK_NAME}/logs/remote_rm.log" 2>&1 &
 childpid=$!
 
 # 启动Ray head节点
 ray start --head \
     --node-ip-address=0.0.0.0 \
-    --port=8100 \
-    --dashboard-port=8101 \
-    --ray-client-server-port=8102 \
+    --port=$RAY_GCS_PORT \
+    --dashboard-port=$RAY_DASHBOARD_PORT \
+    --ray-client-server-port=$RAY_CLIENT_PORT \
     --temp-dir="${CLUSTER_DIR}" \
     --storage="${CLUSTER_DIR}/storage" \
     --num-gpus=8 \
     --dashboard-host=0.0.0.0 \
     --disable-usage-stats \
-    --system-config="{\"automatic_object_spilling_enabled\":true,\"object_spilling_config\":{\"type\":\"filesystem\",\"params\":{\"directory_path\":\"${CLUSTER_DIR}/spill\"}}}" \
+    --system-config="{\"automatic_object_spilling_enabled\":true,\"object_spilling_config\":{\"type\":\"filesystem\",\"params\":{\"directory_path\":\"${CLUSTER_DIR}/spill\"}},\"debug_mode\":true}" \
     --redis-password="$RAY_PASSWORD"
 
 # 等待服务启动
 sleep 5
 
 # 提交训练任务
-RAY_ADDRESS="http://127.0.0.1:8101" ray job submit \
+RAY_ADDRESS="http://127.0.0.1:$RAY_DASHBOARD_PORT" ray job submit \
     --working-dir="/data/vayu/train/xDAN-RL-Training-GRPO" \
     -- python3 -m openrlhf.cli.train_ppo_ray \
     --ref_num_nodes 2 \
     --ref_num_gpus_per_node 4 \
-    --remote_rm_url http://127.0.0.1:5001/get_reward \
+    --remote_rm_url "http://127.0.0.1:$REWARD_MODEL_PORT/get_reward" \
     --actor_num_nodes 2 \
     --actor_num_gpus_per_node 4 \
     --vllm_num_engines 2 \
@@ -91,7 +93,6 @@ cleanup() {
     echo "Cleaning up..."
     kill $childpid 2>/dev/null
     ray stop
-    rm -f "${CLUSTER_DIR}/.ray_password"
 }
 
 # 设置清理钩子
