@@ -138,7 +138,7 @@ if __name__ == "__main__":
         "--input_key", type=str, default="prompt", help="The key name of prompt."
     )
     parser.add_argument(
-        "--port", type=str, default="5000", help="The port of the server."
+        "--port", type=int, default="5000", help="The port of the server."
     )
     args = parser.parse_args()
     
