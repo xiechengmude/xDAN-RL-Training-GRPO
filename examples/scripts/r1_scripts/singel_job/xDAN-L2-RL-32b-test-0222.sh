@@ -38,7 +38,6 @@ ray start --head \
     --num-gpus=8 \
     --dashboard-host=0.0.0.0 \
     --disable-usage-stats \
-    --system-config="{\"automatic_object_spilling_enabled\":true,\"object_spilling_config\":{\"type\":\"filesystem\",\"params\":{\"directory_path\":\"${CLUSTER_DIR}/spill\"}},\"debug_mode\":true}" \
     --redis-password="$RAY_PASSWORD"
 
 # 等待服务启动

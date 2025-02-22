@@ -65,7 +65,8 @@ if [ "$MODE" = "head" ]; then
         --num-gpus=8 \
         --disable-usage-stats \
         --object-store-memory=100000000000 \
-        --redis-password="$RAY_PASSWORD"
+        --redis-password="$RAY_PASSWORD" \
+        --system-config='{"object_spilling_config":"{\"type\":\"filesystem\",\"params\":{\"directory_path\":\"/data/vayu/train/ray/vayu_cluster/spill\"}}"}'
         
     echo "Head node started successfully"
     echo "Dashboard URL: http://$TARGET_HOST:$RAY_DASHBOARD_PORT"
