@@ -6,13 +6,20 @@ mkdir -p "${SAVE_PATH}/${MODEL_CPK_NAME}"
 mkdir -p "${SAVE_PATH}/${MODEL_CPK_NAME}/tensorboard"
 
 # deploy remote reward function at 127.0.0.1:5000
-python -m openrlhf.models.remote_rm.math_verifier --dataset $DATASET --input_key message --prompt-template chatml > "${SAVE_PATH}/${MODEL_CPK_NAME}/remote_rm.log" 2>&1 &
-childpid=$!
+# python -m openrlhf.models.remote_rm.math_verifier --dataset $DATASET --input_key message --prompt-template chatml > "${SAVE_PATH}/${MODEL_CPK_NAME}/remote_rm.log" 2>&1 &
+# childpid=$!
 
-ray start --head --node-ip-address 0.0.0.0 --num-gpus 8 --temp-dir /data/vayu/train/ray
+# ray start --head \
+#     --num-gpus 8 \
+#     --resources='{"node:__internal_head__": 1}' \
+#     --temp-dir /data/vayu/train/ray
+
+
+# ray start --head --node-ip-address 0.0.0.0 --num-gpus 8 --temp-dir /data/vayu/train/ray
 
 ray job submit --address="http://127.0.0.1:8265" \
    --runtime-env-json='{"working_dir": "/data/vayu/train/xDAN-RL-Training-GRPO"}' \
+   --runtime-env-json='{"head_node_compute": true}' \
    -- python3 -m openrlhf.cli.train_ppo_ray \
    --ref_num_nodes 2 \
    --ref_num_gpus_per_node 4 \
