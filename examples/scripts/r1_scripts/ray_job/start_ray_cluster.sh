@@ -43,6 +43,18 @@ RAY_DASHBOARD_PORT=8101            # Dashboard端口(避免默认8265)
 RAY_CLIENT_PORT=8102               # Client端口(避免默认10001)
 REWARD_MODEL_PORT=5001             # RM端口(避免默认5000)
 
+# Ray系统配置
+SYSTEM_CONFIG='{
+    "automatic_object_spilling_enabled": true,
+    "object_spilling_config": {
+        "type": "filesystem",
+        "params": {
+            "directory_path": "/data/vayu/train/ray/vayu_cluster/spill"
+        }
+    },
+    "debug_mode": true
+}'
+
 # 确保目录存在并设置权限
 mkdir -p /data/vayu/train/ray/vayu_cluster/storage
 chmod 700 /data/vayu/train/ray/vayu_cluster
@@ -64,7 +76,7 @@ if [ "$MODE" = "head" ]; then
         --dashboard-host=0.0.0.0 \
         --num-gpus=8 \
         --disable-usage-stats \
-        --system-config='{"automatic_object_spilling_enabled":true,"object_spilling_config":{"type":"filesystem","params":{"directory_path":"/data/vayu/train/ray/vayu_cluster/spill"}},"debug_mode":true}' \
+        --system-config="$SYSTEM_CONFIG" \
         --redis-password="$RAY_PASSWORD"
         
     echo "Head node started successfully"
