@@ -1,11 +1,12 @@
 #!/bin/bash
 
-# Set environment variables
-export PATH="/data/vayu/train/miniconda3/envs/rl-zero2/bin:$PATH"
-export PYTHONPATH="/data/vayu/train/xDAN-RL-Training-GRPO:$PYTHONPATH"
-
 # Set CUDA related environment variables
-
+export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True,max_split_size_mb:512
+export CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6,7
+export NCCL_P2P_DISABLE=0
+export NCCL_IB_DISABLE=1
+export NCCL_DEBUG=INFO
+export CUDA_LAUNCH_BLOCKING=1
 
 DATASET="/data/vayu/train/xDAN-RL-Training-GRPO/examples/data/mathlv345_8k_chatml.json"
 MODEL_CPK_NAME="xDAN-L2-RL-32B-Alignment-Instruct"
@@ -15,7 +16,6 @@ SAVE_PATH="/data/vayu/train/models/rlhf/ckps"
 mkdir -p "${SAVE_PATH}/${MODEL_CPK_NAME}"
 
 # Clear GPU cache and stop existing processes
-/data/vayu/train/miniconda3/envs/rl-zero2/bin/ray stop || true
 pkill -f "ray"
 sleep 5
 
@@ -24,7 +24,7 @@ python -m openrlhf.models.remote_rm.math_verifier --dataset $DATASET --input_key
 childpid=$!
 
 # Start Ray with specific GPU configuration
-/data/vayu/train/miniconda3/envs/rl-zero2/bin/ray start --head \
+ray start --head \
     --node-ip-address 0.0.0.0 \
     --num-gpus 8 \
     --temp-dir /data/vayu/train/ray \
@@ -35,7 +35,7 @@ childpid=$!
 sleep 10
 
 # Submit training job
-/data/vayu/train/miniconda3/envs/rl-zero2/bin/ray job submit --address="http://127.0.0.1:8265" \
+ray job submit --address="http://127.0.0.1:8265" \
    --runtime-env-json='{"working_dir": "/data/vayu/train/xDAN-RL-Training-GRPO"}' \
    -- python3 -m openrlhf.cli.train_ppo_ray \
    --ref_num_nodes 1 \
@@ -80,4 +80,4 @@ sleep 10
    --save_hf_ckpt \
    --use_tensorboard $SAVE_PATH/$MODEL_CPK_NAME/logs
 
-/data/vayu/train/miniconda3/envs/rl-zero2/bin/ray stop
+ray stop
