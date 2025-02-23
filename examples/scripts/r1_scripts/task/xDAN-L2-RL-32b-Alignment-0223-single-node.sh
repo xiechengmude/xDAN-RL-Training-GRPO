@@ -1,6 +1,12 @@
 #!/bin/bash
 
-export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True,max_split_size_mb:256
+# Set CUDA related environment variables
+export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True,max_split_size_mb:512
+export CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6,7
+export NCCL_P2P_DISABLE=0
+export NCCL_IB_DISABLE=1
+export NCCL_DEBUG=INFO
+export CUDA_LAUNCH_BLOCKING=1
 
 DATASET="/data/vayu/train/xDAN-RL-Training-GRPO/examples/data/mathlv345_8k_chatml.json"
 MODEL_CPK_NAME="xDAN-L2-RL-32B-Alignment-Instruct"
@@ -9,20 +15,21 @@ SAVE_PATH="/data/vayu/train/models/rlhf/ckps"
 
 mkdir -p "${SAVE_PATH}/${MODEL_CPK_NAME}"
 
+# Clear GPU cache and stop existing processes
+pkill -f "ray"
+sleep 5
+
 # Start reward model server
 python -m openrlhf.models.remote_rm.math_verifier --dataset $DATASET --input_key prompt --prompt-template chatml > "${SAVE_PATH}/${MODEL_CPK_NAME}/remote_rm.log" 2>&1 &
 childpid=$!
-
-# Clear GPU cache and stop existing Ray processes
-pkill -f "ray"
-sleep 5
 
 # Start Ray with specific GPU configuration
 ray start --head \
     --node-ip-address 0.0.0.0 \
     --num-gpus 8 \
     --temp-dir /data/vayu/train/ray \
-    --object-store-memory 100000000000
+    --object-store-memory 100000000000 \
+    --system-memory-limit 200000000000
 
 # Wait for Ray to initialize
 sleep 10
@@ -43,6 +50,8 @@ ray job submit --address="http://127.0.0.1:8265" \
    --vllm_gpu_memory_utilization 0.35 \
    --vllm_max_num_batched_tokens 2048 \
    --vllm_max_num_seqs 128 \
+   --vllm_enforce_eager true \
+   --vllm_max_model_len 8192 \
    --vllm_sync_backend nccl \
    --enable_prefix_caching \
    --pretrain $PRETRAIN_MODEL \
