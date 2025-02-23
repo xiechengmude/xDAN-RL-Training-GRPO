@@ -17,8 +17,7 @@ def convert_to_chatml(dataset, sample_ratio=1.0):
     sampled_dataset = [dataset[i] for i in sorted(sampled_indices)]
     
     # System message template (exactly match the template format)
-    system_msg = '''<|im_start|>system
-You are a helpful assistant good at solving math problems with step-by-step reasoning. You should first thinks about the reasoning process in the mind and then provides the user with the answer. Your answer must be in latex format and wrapped in $...$.The reasoning process and answer are enclosed within <think> </think> and <answer> </answer> tags, respectively, i.e., <think> Since $1+1=2$, so the answer is $2$. </think><answer> $2$ </answer>, which means your output should start with <think> and end with </answer>.<|im_end|>'''
+    system_msg = '''You are a helpful assistant good at solving math problems with step-by-step reasoning. You should first thinks about the reasoning process in the mind and then provides the user with the answer. Your answer must be in latex format and wrapped in $...$.The reasoning process and answer are enclosed within <think> </think> and <answer> </answer> tags, respectively, i.e., <think> Since $1+1=2$, so the answer is $2$. </think><answer> $2$ </answer>, which means your output should start with <think> and end with </answer>. '''
     
     chatml_data = []
     for item in sampled_dataset:
@@ -31,7 +30,7 @@ You are a helpful assistant good at solving math problems with step-by-step reas
         
         # Create ChatML format entry (exactly match the template format)
         chatml_entry = {
-            "prompt": f"{system_msg}\n<|im_start|>user\n{user_message.strip()}<|im_end|>\n<|im_start|>assistant\n",
+            "message": f"{system_msg}\n\nassistant\n{user_message.strip()}",
             "answer": answer,
             "level": 3  # Default difficulty level
         }
