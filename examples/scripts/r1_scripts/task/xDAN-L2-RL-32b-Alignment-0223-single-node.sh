@@ -13,8 +13,19 @@ mkdir -p "${SAVE_PATH}/${MODEL_CPK_NAME}"
 python -m openrlhf.models.remote_rm.math_verifier --dataset $DATASET --input_key prompt --prompt-template chatml > "${SAVE_PATH}/${MODEL_CPK_NAME}/remote_rm.log" 2>&1 &
 childpid=$!
 
-# Start Ray
-ray start --head --node-ip-address 0.0.0.0 --num-gpus 8 --temp-dir /data/vayu/train/ray
+# Clear GPU cache and stop existing Ray processes
+pkill -f "ray"
+sleep 5
+
+# Start Ray with specific GPU configuration
+ray start --head \
+    --node-ip-address 0.0.0.0 \
+    --num-gpus 8 \
+    --temp-dir /data/vayu/train/ray \
+    --object-store-memory 100000000000
+
+# Wait for Ray to initialize
+sleep 10
 
 # Submit training job
 ray job submit --address="http://127.0.0.1:8265" \
@@ -29,15 +40,17 @@ ray job submit --address="http://127.0.0.1:8265" \
    --vllm_tensor_parallel_size 4 \
    --colocate_all_models \
    --vllm_enable_sleep \
-   --vllm_gpu_memory_utilization 0.45 \
-   --vllm_sync_backend gloo \
+   --vllm_gpu_memory_utilization 0.35 \
+   --vllm_max_num_batched_tokens 2048 \
+   --vllm_max_num_seqs 128 \
+   --vllm_sync_backend nccl \
    --enable_prefix_caching \
    --pretrain $PRETRAIN_MODEL \
    --save_path $SAVE_PATH/$MODEL_CPK_NAME \
    --micro_train_batch_size 1 \
-   --train_batch_size 32 \
+   --train_batch_size 16 \
    --micro_rollout_batch_size 1 \
-   --rollout_batch_size 64 \
+   --rollout_batch_size 32 \
    --temperature 1 \
    --n_samples_per_prompt 4 \
    --max_epochs 1 \
@@ -46,7 +59,7 @@ ray job submit --address="http://127.0.0.1:8265" \
    --max_samples 100000 \
    --generate_max_len 3000 \
    --advantage_estimator rloo \
-   --zero_stage 3 \
+   --zero_stage 2 \
    --bf16 \
    --actor_learning_rate 1e-6 \
    --init_kl_coef 0.0 \
