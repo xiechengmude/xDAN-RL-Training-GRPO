@@ -1,6 +1,10 @@
 #!/bin/bash
 
-export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True,max_split_size_mb:256
+# Set environment variables
+export PATH="/data/vayu/train/miniconda3/envs/rl-zero2/bin:$PATH"
+export PYTHONPATH="/data/vayu/train/xDAN-RL-Training-GRPO:$PYTHONPATH"
+
+
 
 DATASET="/data/vayu/train/xDAN-RL-Training-GRPO/examples/data/mathlv345_8k_chatml.json"
 MODEL_CPK_NAME="xDAN-L2-RL-32B-Alignment-Instruct-nodes"
@@ -9,20 +13,26 @@ SAVE_PATH="/data/vayu/train/models/rlhf/ckps"
 
 mkdir -p "${SAVE_PATH}/${MODEL_CPK_NAME}"
 
+# Clear GPU cache and stop existing processes
+/data/vayu/train/miniconda3/envs/rl-zero2/bin/ray stop || true
+pkill -f "ray"
+sleep 5
+
 # Start reward model server
 python -m openrlhf.models.remote_rm.math_verifier --dataset $DATASET --input_key prompt --prompt-template chatml > "${SAVE_PATH}/${MODEL_CPK_NAME}/remote_rm.log" 2>&1 &
 childpid=$!
 
 # Start Ray on head node
-ray start --head \
+/data/vayu/train/miniconda3/envs/rl-zero2/bin/ray start --head \
     --node-ip-address 0.0.0.0 \
     --port 6379 \
     --num-gpus 8 \
     --temp-dir /data/vayu/train/ray \
-    --object-store-memory 100000000000
+    --object-store-memory 100000000000 \
+    --system-memory-limit 200000000000
 
 echo "Head node started. Please start worker node with:"
-echo "ray start --address='10.11.50.33:6379' --num-gpus 8 --temp-dir /data/vayu/train/ray --object-store-memory 100000000000"
+echo "/data/vayu/train/miniconda3/envs/rl-zero2/bin/ray start --address='10.11.50.33:6379' --num-gpus 8 --temp-dir /data/vayu/train/ray --object-store-memory 100000000000"
 
 echo "Waiting 60 seconds for worker node to join..."
 for i in {60..1}; do
@@ -32,7 +42,7 @@ done
 echo -e "\nStarting training job..."
 
 # Submit training job
-ray job submit --address="http://127.0.0.1:8265" \
+/data/vayu/train/miniconda3/envs/rl-zero2/bin/ray job submit --address="http://127.0.0.1:8265" \
    --runtime-env-json='{"working_dir": "/data/vayu/train/xDAN-RL-Training-GRPO"}' \
    -- python3 -m openrlhf.cli.train_ppo_ray \
    --ref_num_nodes 2 \
@@ -76,4 +86,4 @@ ray job submit --address="http://127.0.0.1:8265" \
    --use_tensorboard $SAVE_PATH/$MODEL_CPK_NAME/logs
 
 # Stop Ray on all nodes
-ray stop
+/data/vayu/train/miniconda3/envs/rl-zero2/bin/ray stop
