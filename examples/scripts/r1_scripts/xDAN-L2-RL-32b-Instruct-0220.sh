@@ -1,6 +1,6 @@
 DATASET="/data/vayu/train/datasets/xDAN-Agentic-openMath-r1-chatml.json"
 MODEL_CPK_NAME="xDAN-L2-RL-32B-Instruct"
-PRETRAIN_MODEL="/data/vayu/train/models/xDAN-L2-Qwen25-32B-Instruct"
+PRETRAIN_MODEL="/data/vayu/train/eval/models/xDAN-L2-Thinking-Alignment-0216-ckp2364"
 SAVE_PATH="./ckpts"
 mkdir -p "${SAVE_PATH}/${MODEL_CPK_NAME}"
 mkdir -p "${SAVE_PATH}/${MODEL_CPK_NAME}/tensorboard"
@@ -29,7 +29,7 @@ ray job submit --address="http://127.0.0.1:8265" \
    --vllm_tensor_parallel_size 4 \
    --colocate_all_models \
    --vllm_enable_sleep \
-   --vllm_gpu_memory_utilization 0.5 \
+   --vllm_gpu_memory_utilization 0.6 \
    --vllm_sync_backend gloo \
    --enable_prefix_caching \
    --pretrain $PRETRAIN_MODEL \

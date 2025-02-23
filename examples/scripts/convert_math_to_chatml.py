@@ -16,23 +16,24 @@ def convert_to_chatml(dataset, sample_ratio=1.0):
     sampled_indices = random.sample(range(total_samples), num_samples)
     sampled_dataset = [dataset[i] for i in sorted(sampled_indices)]
     
+    # System message template (exactly match the template format)
+    system_msg = '''<|im_start|>system
+You are a helpful assistant good at solving math problems with step-by-step reasoning. You should first thinks about the reasoning process in the mind and then provides the user with the answer. Your answer must be in latex format and wrapped in $...$.The reasoning process and answer are enclosed within <think> </think> and <answer> </answer> tags, respectively, i.e., <think> Since $1+1=2$, so the answer is $2$. </think><answer> $2$ </answer>, which means your output should start with <think> and end with </answer>.<|im_end|>'''
+    
     chatml_data = []
     for item in sampled_dataset:
         messages = item['messages']
-        # Extract user message and assistant response
+        # Extract user message
         user_message = next(msg['value'] for msg in messages if msg['from'] == 'user')
-        assistant_response = next(msg['value'] for msg in messages if msg['from'] == 'assistant')
         
-        # Create ChatML format entry
+        # Use original answer
+        answer = item['answer'].strip()
+        
+        # Create ChatML format entry (exactly match the template format)
         chatml_entry = {
-            "message": json.dumps([{
-                "role": "user",
-                "content": [{
-                    "type": "text",
-                    "text": user_message
-                }]
-            }]),
-            "answer": assistant_response
+            "prompt": f"{system_msg}\n<|im_start|>user\n{user_message.strip()}<|im_end|>\n<|im_start|>assistant\n",
+            "answer": answer,
+            "level": 3  # Default difficulty level
         }
         
         chatml_data.append(chatml_entry)
@@ -44,28 +45,22 @@ def main():
     parser = argparse.ArgumentParser(description='Convert dataset to ChatML format with sampling')
     parser.add_argument('--sample_ratio', type=float, default=1.0,
                       help='Ratio of data to sample (between 0 and 1)')
+    parser.add_argument('--output', type=str, default='mathlv345_8k_chatml.json',
+                      help='Output file name')
     args = parser.parse_args()
     
     # Load dataset from Hugging Face
     dataset = load_dataset("xDAN2099/xDAN-Agentic-openMath-r1", split="train")
     
-    # Convert to ChatML format with sampling
+    # Convert to ChatML format
     chatml_data = convert_to_chatml(dataset, args.sample_ratio)
     
-    # Generate output path with sample ratio in filename
-    ratio_percent = int(args.sample_ratio * 100)
-    output_path = f'./xDAN-Agentic-openMath-r1-{ratio_percent}percent-chatml.json'
+    # Save to file
+    with open(args.output, 'w', encoding='utf-8') as f:
+        json.dump(chatml_data, f, indent=2, ensure_ascii=False)
     
-    # Ensure the output directory exists
-    import os
-    os.makedirs(os.path.dirname(output_path), exist_ok=True)
-    
-    with open(output_path, 'w', encoding='utf-8') as f:
-        json.dump(chatml_data, f, ensure_ascii=False, indent=2)
-    
-    print(f"Converted data saved to {output_path}")
-    print(f"Total examples in original dataset: {len(dataset)}")
-    print(f"Total examples sampled and converted: {len(chatml_data)} ({ratio_percent}%)")
+    print(f"Converted {len(chatml_data)} samples to ChatML format")
+    print(f"Saved to {args.output}")
 
 if __name__ == "__main__":
     # Set random seed for reproducibility
