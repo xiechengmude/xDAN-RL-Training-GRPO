@@ -15,7 +15,8 @@ SAVE_PATH="/data/vayu/train/models/rlhf/ckps"
 
 mkdir -p "${SAVE_PATH}/${MODEL_CPK_NAME}"
 
-# Clear GPU cache and stop existing processes
+# Clean up existing processes
+pkill -f -9 "openrlhf.models.remote_rm.math_verifier"
 pkill -f "ray"
 sleep 5
 
@@ -27,9 +28,7 @@ childpid=$!
 ray start --head \
     --node-ip-address 0.0.0.0 \
     --num-gpus 8 \
-    --temp-dir /data/vayu/train/ray \
-    --object-store-memory 100000000000 \
-    --system-memory-limit 200000000000
+    --temp-dir /data/vayu/train/ray 
 
 # Wait for Ray to initialize
 sleep 10

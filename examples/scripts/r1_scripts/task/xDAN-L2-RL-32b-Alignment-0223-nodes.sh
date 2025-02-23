@@ -9,6 +9,11 @@ SAVE_PATH="/data/vayu/train/models/rlhf/ckps"
 
 mkdir -p "${SAVE_PATH}/${MODEL_CPK_NAME}"
 
+# Clean up existing processes
+pkill -f -9 "openrlhf.models.remote_rm.math_verifier"
+pkill -f "ray"
+sleep 5
+
 # Start reward model server
 python -m openrlhf.models.remote_rm.math_verifier --dataset $DATASET --input_key prompt --prompt-template chatml > "${SAVE_PATH}/${MODEL_CPK_NAME}/remote_rm.log" 2>&1 &
 childpid=$!
