@@ -1,3 +1,41 @@
+#!/bin/bash
+
+export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True,max_split_size_mb:256
+
+DATASET="/data/vayu/train/xDAN-RL-Training-GRPO/examples/data/mathlv345_8k_chatml.json"
+MODEL_CPK_NAME="xDAN-L2-RL-32B-Alignment-Instruct"
+PRETRAIN_MODEL="/data/vayu/train/eval/models/xDAN-L2-Thinking-Alignment-0216-ckp2364"
+SAVE_PATH="./ckpts"
+mkdir -p "${SAVE_PATH}/${MODEL_CPK_NAME}"
+mkdir -p "${SAVE_PATH}/${MODEL_CPK_NAME}/tensorboard"
+
+# deploy remote reward function at 127.0.0.1:5000
+# python -m openrlhf.models.remote_rm.math_verifier --dataset $DATASET --input_key message --prompt-template chatml > "${SAVE_PATH}/${MODEL_CPK_NAME}/remote_rm.log" 2>&1 &
+# childpid=$!
+
+# ray start --head \
+#     --num-gpus 8 \
+#     --resources='{"head_node": 1}' \
+#     --node-ip-address 10.11.50.33 \
+#     --port=6379 \
+#     --temp-dir /data/vayu/train/ray \
+#     --object-store-memory=100000000000
+
+ray job submit --address="http://127.0.0.1:8265" \
+   --runtime-env-json='{"working_dir": "/data/vayu/train/xDAN-RL-Training-GRPO"}' \
+   -- python3 -m openrlhf.cli.train_ppo_ray \
+   --ref_num_nodes 1 \
+   --ref_num_gpus_per_node 4 \
+   --remote_rm_url http://127.0.0.1:5000/get_reward \
+   --actor_num_nodes 1 \
+   --actor_num_gpus_per_node 4 \
+   --vllm_num_engines 2 \
+   --vllm_tensor_parallel_size 2 \
+   --colocate_all_models \
+   --vllm_enable_sleep \
+   --vllm_gpu_memory_utilization 0.3 \
+   --vllm_max_num_batched_tokens 2048 \
+   --vllm_max_num_seqs 256 \
 DATASET="/data/vayu/train/xDAN-RL-Training-GRPO/examples/data/mathlv345_8k_chatml.json"
 MODEL_CPK_NAME="xDAN-L2-RL-32B-Alignment-Instruct"
 PRETRAIN_MODEL="/data/vayu/train/eval/models/xDAN-L2-Thinking-Alignment-0216-ckp2364"
