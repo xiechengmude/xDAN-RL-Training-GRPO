@@ -1,5 +1,5 @@
-DATASET="/data/vayu/train/datasets/xDAN-Agentic-openMath-r1-chatml.json"
-MODEL_CPK_NAME="xDAN-L2-RL-32B-Instruct"
+DATASET="/data/vayu/train/xDAN-RL-Training-GRPO/examples/data/mathlv345_8k_chatml.json"
+MODEL_CPK_NAME="xDAN-L2-RL-32B-Alignment-Instruct"
 PRETRAIN_MODEL="/data/vayu/train/eval/models/xDAN-L2-Thinking-Alignment-0216-ckp2364"
 SAVE_PATH="./ckpts"
 mkdir -p "${SAVE_PATH}/${MODEL_CPK_NAME}"
@@ -18,7 +18,7 @@ mkdir -p "${SAVE_PATH}/${MODEL_CPK_NAME}/tensorboard"
 #     --object-store-memory=100000000000
 
 ray job submit --address="http://127.0.0.1:8265" \
-   --runtime-env-json='{"working_dir": "/data/vayu/train/xDAN-RL-Training-GRPO", "resources": {"head_node": 1}}' \
+   --runtime-env-json='{"working_dir": "/data/vayu/train/xDAN-RL-Training-GRPO"}' \
    -- python3 -m openrlhf.cli.train_ppo_ray \
    --ref_num_nodes 1 \
    --ref_num_gpus_per_node 8 \
