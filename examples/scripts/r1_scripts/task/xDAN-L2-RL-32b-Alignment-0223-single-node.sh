@@ -5,12 +5,7 @@ export PATH="/data/vayu/train/miniconda3/envs/rl-zero2/bin:$PATH"
 export PYTHONPATH="/data/vayu/train/xDAN-RL-Training-GRPO:$PYTHONPATH"
 
 # Set CUDA related environment variables
-export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True,max_split_size_mb:512
-export CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6,7
-export NCCL_P2P_DISABLE=0
-export NCCL_IB_DISABLE=1
-export NCCL_DEBUG=INFO
-export CUDA_LAUNCH_BLOCKING=1
+
 
 DATASET="/data/vayu/train/xDAN-RL-Training-GRPO/examples/data/mathlv345_8k_chatml.json"
 MODEL_CPK_NAME="xDAN-L2-RL-32B-Alignment-Instruct"
