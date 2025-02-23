@@ -18,8 +18,7 @@ ray start --head \
     --node-ip-address 0.0.0.0 \
     --port 6379 \
     --num-gpus 8 \
-    --temp-dir /data/vayu/train/ray \
-    --object-store-memory 100000000000
+    --temp-dir /data/vayu/train/ray
 
 echo "Head node started. Please start worker node with:"
 echo "ray start --address='10.11.50.33:6379' --num-gpus 8 --temp-dir /data/vayu/train/ray --object-store-memory 100000000000"

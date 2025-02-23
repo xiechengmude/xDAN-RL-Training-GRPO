@@ -48,8 +48,6 @@ ray job submit --address="http://127.0.0.1:8265" \
    --colocate_all_models \
    --vllm_enable_sleep \
    --vllm_gpu_memory_utilization 0.35 \
-   --vllm_enforce_eager true \
-   --vllm_max_model_len 8192 \
    --vllm_sync_backend nccl \
    --enable_prefix_caching \
    --pretrain $PRETRAIN_MODEL \
