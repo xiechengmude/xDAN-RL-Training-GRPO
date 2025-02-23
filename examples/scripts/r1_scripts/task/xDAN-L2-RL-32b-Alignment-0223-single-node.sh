@@ -25,13 +25,11 @@ ray job submit --address="http://127.0.0.1:8265" \
    --remote_rm_url http://127.0.0.1:5000/get_reward \
    --actor_num_nodes 1 \
    --actor_num_gpus_per_node 4 \
-   --vllm_num_engines 2 \
+   --vllm_num_engines 1 \
    --vllm_tensor_parallel_size 4 \
    --colocate_all_models \
    --vllm_enable_sleep \
    --vllm_gpu_memory_utilization 0.45 \
-   --vllm_max_num_batched_tokens 4096 \
-   --vllm_max_num_seqs 256 \
    --vllm_sync_backend gloo \
    --enable_prefix_caching \
    --pretrain $PRETRAIN_MODEL \
