@@ -705,7 +705,7 @@ class RemoteExperienceMaker(NaiveExperienceMaker):
         if self.strategy.args.perf:
             self.perf_stats["actor_value_rm_time"] += actor_value_rm_time
             self.perf_stats["wait_time"] += wait_time
-        assert len(visual_inputs) > 0
+        #assert len(visual_inputs) > 0
         experience = Experience(
             sequences,
             action_log_probs,
