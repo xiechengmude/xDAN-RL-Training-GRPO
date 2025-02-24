@@ -15,8 +15,8 @@ childpid=$!
 # Set NCCL environment variables for better multi-node communication
 export NCCL_DEBUG=INFO
 export NCCL_IB_DISABLE=0
-export NCCL_IB_HCA=mlx5_0,mlx5_1
-export NCCL_SOCKET_IFNAME=ib0
+# export NCCL_IB_HCA=mlx5_0,mlx5_1
+# export NCCL_SOCKET_IFNAME=ib0
 
 ray start --head --node-ip-address 10.11.50.33 --port=6379 --num-gpus 8 --temp-dir /data/vayu/train/ray
 
