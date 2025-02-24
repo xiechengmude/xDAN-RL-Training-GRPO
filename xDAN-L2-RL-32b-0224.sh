@@ -12,7 +12,13 @@ mkdir -p "${SAVE_PATH}/${MODEL_CPK_NAME}/tensorboard"
 python -m openrlhf.models.remote_rm.math_verifier --dataset $DATASET --input_key prompt --prompt-template chatml > "${SAVE_PATH}/${MODEL_CPK_NAME}/remote_rm.log" 2>&1 &
 childpid=$!
 
-ray start --head --node-ip-address 0.0.0.0 --num-gpus 8 --temp-dir /data/vayu/train/ray
+# Set NCCL environment variables for better multi-node communication
+export NCCL_DEBUG=INFO
+export NCCL_IB_DISABLE=0
+export NCCL_IB_HCA=mlx5_0,mlx5_1
+export NCCL_SOCKET_IFNAME=ib0
+
+ray start --head --node-ip-address 10.11.50.33 --port=6379 --num-gpus 8 --temp-dir /data/vayu/train/ray
 
 # Wait for other nodes to join
 echo "Waiting 30 seconds for other nodes to join..."
@@ -22,8 +28,7 @@ for i in {30..1}; do
 done
 echo -e "\rAll nodes should be connected now. Starting the job..."
 
-
-ray job submit --address="http://127.0.0.1:8265" \
+ray job submit --address="http://0.0.0.0:8265" \
    --runtime-env-json='{"working_dir": "/data/vayu/train/xDAN-RL-Training-GRPO"}' \
    -- python3 -m openrlhf.cli.train_ppo_ray \
    --ref_num_nodes 2 \
