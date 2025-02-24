@@ -1,6 +1,15 @@
 #!/bin/bash
 
-export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True,max_split_size_mb:256
+# Set CUDA related environment variables
+export PYTORCH_CUDA_ALLOC_CONF=max_split_size_mb:256
+export CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6,7
+export NCCL_P2P_DISABLE=1
+export NCCL_IB_DISABLE=1
+export NCCL_DEBUG=INFO
+export CUDA_LAUNCH_BLOCKING=1
+export TORCH_DISTRIBUTED_DEBUG=INFO
+export NCCL_SOCKET_IFNAME=eth0
+export NCCL_DEBUG_SUBSYS=ALL
 
 DATASET="/data/vayu/train/xDAN-RL-Training-GRPO/examples/data/mathlv345_8k_chatml.json"
 MODEL_CPK_NAME="xDAN-L2-RL-32B-Alignment-Instruct-nodes"
@@ -12,7 +21,7 @@ mkdir -p "${SAVE_PATH}/${MODEL_CPK_NAME}"
 # Clean up existing processes
 pkill -f -9 "openrlhf.models.remote_rm.math_verifier"
 pkill -f "ray"
-sleep 5
+sleep 20
 
 # Start reward model server
 python -m openrlhf.models.remote_rm.math_verifier --dataset $DATASET --input_key prompt --prompt-template chatml > "${SAVE_PATH}/${MODEL_CPK_NAME}/remote_rm.log" 2>&1 &
@@ -26,30 +35,27 @@ ray start --head \
     --temp-dir /data/vayu/train/ray
 
 echo "Head node started. Please start worker node with:"
-echo "ray start --address='10.11.50.33:6379' --num-gpus 8 --temp-dir /data/vayu/train/ray --object-store-memory 100000000000"
+echo "ray start --address='10.11.50.33:6379' --num-gpus 8 --temp-dir /data/vayu/train/ray"
 
-echo "Waiting 60 seconds for worker node to join..."
-for i in {60..1}; do
-    echo -ne "Starting job in $i seconds...\r"
-    sleep 1
-done
-echo -e "\nStarting training job..."
+sleep 20
 
 # Submit training job
 ray job submit --address="http://127.0.0.1:8265" \
    --runtime-env-json='{"working_dir": "/data/vayu/train/xDAN-RL-Training-GRPO"}' \
    -- python3 -m openrlhf.cli.train_ppo_ray \
-   --ref_num_nodes 2 \
-   --ref_num_gpus_per_node 8 \
+   --ref_num_nodes 1 \
+   --ref_num_gpus_per_node 4 \
    --remote_rm_url http://127.0.0.1:5000/get_reward \
-   --actor_num_nodes 2 \
-   --actor_num_gpus_per_node 8 \
-   --vllm_num_engines 2 \
+   --actor_num_nodes 1 \
+   --actor_num_gpus_per_node 4 \
+   --vllm_num_engines 1 \
    --vllm_tensor_parallel_size 4 \
    --colocate_all_models \
    --vllm_enable_sleep \
-   --vllm_gpu_memory_utilization 0.45 \
-   --vllm_sync_backend gloo \
+   --vllm_gpu_memory_utilization 0.25 \
+   --vllm_max_num_batched_tokens 1024 \
+   --vllm_max_num_seqs 64 \
+   --vllm_sync_backend nccl \
    --enable_prefix_caching \
    --pretrain $PRETRAIN_MODEL \
    --save_path $SAVE_PATH/$MODEL_CPK_NAME \
