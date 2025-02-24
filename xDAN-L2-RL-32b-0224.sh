@@ -31,7 +31,7 @@ ray job submit --address="http://127.0.0.1:8265" \
    --remote_rm_url http://127.0.0.1:5000/get_reward \
    --actor_num_nodes 2 \
    --actor_num_gpus_per_node 4 \
-   --vllm_num_engines 1 \
+   --vllm_num_engines 2 \
    --vllm_tensor_parallel_size 4 \
    --colocate_all_models \
    --vllm_enable_sleep \
