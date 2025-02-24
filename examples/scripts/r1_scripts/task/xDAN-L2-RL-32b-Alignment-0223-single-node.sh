@@ -1,7 +1,6 @@
 #!/bin/bash
 
 # Set CUDA related environment variables
-export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True,max_split_size_mb:512
 export CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6,7
 export NCCL_P2P_DISABLE=0
 export NCCL_IB_DISABLE=1
@@ -31,7 +30,7 @@ ray start --head \
     --temp-dir /data/vayu/train/ray 
 
 # Wait for Ray to initialize
-sleep 10
+sleep 20
 
 # Submit training job
 ray job submit --address="http://127.0.0.1:8265" \
