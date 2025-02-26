@@ -15,10 +15,9 @@ childpid=$!
 # Set NCCL environment variables for better multi-node communication
 export NCCL_DEBUG=INFO
 export NCCL_IB_DISABLE=0
-# export NCCL_IB_HCA=mlx5_0,mlx5_1
-# export NCCL_SOCKET_IFNAME=ib0
+export NCCL_IB_HCA=mlx5_0,mlx5_3,mlx5_4,mlx5_5
 
-ray start --head --node-ip-address 10.11.50.33 --port=6379 --num-gpus 8 --temp-dir /data/vayu/train/ray
+ray start --head --node-ip-address 10.11.50.33 --num-gpus 8 --temp-dir /data/vayu/train/ray
 
 # Wait for other nodes to join
 echo "Waiting 30 seconds for other nodes to join..."
@@ -36,7 +35,7 @@ ray job submit --address="http://0.0.0.0:8265" \
    --remote_rm_url http://127.0.0.1:5000/get_reward \
    --actor_num_nodes 2 \
    --actor_num_gpus_per_node 4 \
-   --vllm_num_engines 2 \
+   --vllm_num_engines 1 \
    --vllm_tensor_parallel_size 4 \
    --colocate_all_models \
    --vllm_enable_sleep \
