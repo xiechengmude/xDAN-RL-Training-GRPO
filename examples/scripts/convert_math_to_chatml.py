@@ -1,3 +1,27 @@
+"""
+Input Data Structure:
+Dataset from 'xDAN2099/xDAN-Agentic-openMath-r1' with format:
+{
+    'messages': [
+        {'from': 'user', 'value': 'problem text in latex'},
+        {'from': 'assistant', 'value': 'solution text'}
+    ],
+    'answer': 'formatted solution with <think> and <answer> tags'
+}
+
+Output Data Structure:
+List of ChatML entries with format:
+{
+    'message': 'system_prompt\\n\\nassistant\\nuser_question',
+    'answer': 'solution with <think> and <answer> tags',
+    'level': int  # difficulty level (default: 3)
+}
+
+The output answer format must follow:
+<think> reasoning process in latex </think>
+<answer> final answer in latex </answer>
+"""
+
 import json
 from datasets import load_dataset
 import random
