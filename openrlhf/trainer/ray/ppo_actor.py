@@ -77,10 +77,12 @@ class ActorPPOTrainer(PPOTrainer):
         #   1. AllGather paramters to rank 0
         #   2. Broadcast parameters from rank 0 to all vllm engines
         if self.vllm_engines is not None and not self.use_cuda_ipc and torch.distributed.get_rank() == 0:
-            master_address = ray._private.services.get_node_ip_address()
+            #master_address = ray._private.services.get_node_ip_address()
+            master_address = os.environ.get("MASTER_ADDR", ray._private.services.get_node_ip_address())
             with socket.socket() as sock:
                 sock.bind(("", 0))
-                master_port = sock.getsockname()[1]
+                #master_port = sock.getsockname()[1]
+                master_port = int(os.environ.get("MASTER_PORT", sock.getsockname()[1]))
 
             vllm_num_engines, vllm_tensor_parallel_size = (
                 self.strategy.args.vllm_num_engines,
