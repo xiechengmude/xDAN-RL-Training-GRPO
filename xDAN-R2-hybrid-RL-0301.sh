@@ -36,7 +36,7 @@ ray job submit --address="http://0.0.0.0:8265" \
    --max_epochs 2 \
    --prompt_max_len 1024 \
    --max_samples 50000 \
-   --generate_max_len 1024 \
+   --generate_max_len 8192 \
    --per_device_train_batch_size 1 \
    --gradient_accumulation_steps 4 \
    --zero_stage 3 \
