@@ -56,7 +56,6 @@ ray job submit --address="http://0.0.0.0:8265" \
    --save_steps 10 \
    --use_wandb $SAVE_PATH/$MODEL_CPK_NAME/logs \
    --bf16 \
-   --use_kl_loss \
    --use_kl_estimator_k3 
 
 # You could also try
