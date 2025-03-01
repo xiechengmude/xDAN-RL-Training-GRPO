@@ -23,8 +23,7 @@ echo "Starting remote reward service..."
 python -m openrlhf.models.remote_rm.math_verifier \
     --dataset $DATASET \
     --input_key prompt \
-    --prompt-template chatml \
-    --bf16 > "${SAVE_PATH}/${MODEL_CPK_NAME}/remote_rm.log" 2>&1 &
+    --prompt-template chatml > "${SAVE_PATH}/${MODEL_CPK_NAME}/remote_rm.log" 2>&1 &
 
 # Save the PID
 echo $! > "${SAVE_PATH}/${MODEL_CPK_NAME}/remote_rm.pid"
