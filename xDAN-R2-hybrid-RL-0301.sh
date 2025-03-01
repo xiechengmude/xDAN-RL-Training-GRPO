@@ -1,5 +1,5 @@
 set -x
-DATASET="examples/data/xDAN-Terrible-level-math-collection_chatml_rl.json"
+DATASET="/data/vayu/train/xDAN-RL-Training-GRPO/examples/data/xDAN-Terrible-level-math-collection_chatml_rl.json"
 
 MODEL_CPK_NAME="xDAN-L2-RL-32B-Instruct"
 PRETRAIN_MODEL="/data/vayu/train/models/xDAN-L2-32b-Reasoning-SFT-Alignment-0216-ckp2364"
