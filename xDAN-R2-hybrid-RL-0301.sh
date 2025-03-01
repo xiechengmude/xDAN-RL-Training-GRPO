@@ -23,7 +23,7 @@ ray job submit --address="http://0.0.0.0:8265" \
    --vllm_tensor_parallel_size 4 \
    --remote_rm_url http://localhost:5000/get_reward \
    --vllm_gpu_memory_utilization 0.7 \
-   --advantage_estimator rloo \
+   --advantage_estimator reinforce_baseline \
    --pretrain $PRETRAIN_MODEL \
    --save_path $SAVE_PATH/$MODEL_CPK_NAME \
    --ckpt_path $SAVE_PATH/$MODEL_CPK_NAME/ckpt \
@@ -53,9 +53,7 @@ ray job submit --address="http://0.0.0.0:8265" \
    --vllm_enable_sleep \
    --save_steps 10 \
    --use_wandb $SAVE_PATH/$MODEL_CPK_NAME/logs \
-   --bf16 \
-   --use_kl_loss \
-   --use_kl_estimator_k3
+   --bf16 
 
 # You could also try
 #   --use_kl_loss \
