@@ -15,21 +15,21 @@ childpid=$!
 ray job submit --address="http://0.0.0.0:8265" \
    --runtime-env-json='{"working_dir": "/data/vayu/train/xDAN-RL-Training-GRPO", "env_vars": {"MASTER_ADDR": "10.11.50.36", "MASTER_PORT": "24999"}}' \
    -- python3 -m openrlhf.cli.train_ppo_ray \
-   --ref_num_nodes 2 \
-   --ref_num_gpus_per_node 4 \
-   --actor_num_nodes 2 \
-   --actor_num_gpus_per_node 4 \
+   --ref_num_nodes 1 \
+   --ref_num_gpus_per_node 8 \
+   --actor_num_nodes 1 \
+   --actor_num_gpus_per_node 8 \
    --colocate_actor_ref \
    --vllm_num_engines 2 \
    --vllm_tensor_parallel_size 4 \
    --remote_rm_url http://localhost:5000/get_reward \
-   --vllm_gpu_memory_utilization 0.7 \
+   --vllm_gpu_memory_utilization 0.85 \
    --advantage_estimator reinforce_baseline \
    --pretrain $PRETRAIN_MODEL \
    --save_path $SAVE_PATH/$MODEL_CPK_NAME \
    --ckpt_path $SAVE_PATH/$MODEL_CPK_NAME/ckpt \
    --save_hf_ckpt \
-   --micro_train_batch_size 2 \
+   --micro_train_batch_size 1 \
    --train_batch_size 32 \
    --micro_rollout_batch_size 2 \
    --rollout_batch_size 32 \
@@ -56,7 +56,7 @@ ray job submit --address="http://0.0.0.0:8265" \
    --save_steps 10 \
    --use_wandb $SAVE_PATH/$MODEL_CPK_NAME/logs \
    --bf16 \
-   --use_kl_estimator_k3
+   --use_kl_estimator_k3 
 
 # You could also try
 #   --use_kl_loss \
