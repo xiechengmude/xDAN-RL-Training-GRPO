@@ -1,5 +1,7 @@
 from datetime import timedelta
 from typing import Any, Optional, Union
+import os
+import logging
 
 import torch
 import torch.distributed
@@ -32,21 +34,34 @@ def init_process_group(
         assert world_size > 0, "world_size must be positive if using store"
         assert rank >= 0, "rank must be non-negative if using store"
     elif init_method is None:
-        init_method = "env://"
+        # Try to get master address and port from environment variables
+        master_addr = os.environ.get("MASTER_ADDR")
+        master_port = os.environ.get("MASTER_PORT")
+        
+        if master_addr and master_port:
+            init_method = f"tcp://{master_addr}:{master_port}"
+        else:
+            init_method = "env://"
 
     if backend:
         backend = Backend(backend)
     else:
-        backend = Backend("undefined")
+        # Default to NCCL for GPU, GLOO for CPU
+        backend = Backend("nccl" if torch.cuda.is_available() else "gloo")
 
     if timeout is None:
-        timeout = default_pg_timeout
+        # Increase default timeout for better stability
+        timeout = timedelta(minutes=30)
 
     # backward compatible API
     if store is None:
-        rendezvous_iterator = rendezvous(init_method, rank, world_size, timeout=timeout)
-        store, rank, world_size = next(rendezvous_iterator)
-        store.set_timeout(timeout)
+        try:
+            rendezvous_iterator = rendezvous(init_method, rank, world_size, timeout=timeout)
+            store, rank, world_size = next(rendezvous_iterator)
+            store.set_timeout(timeout)
+        except Exception as e:
+            logging.error(f"Failed to initialize rendezvous: {e}")
+            raise
 
         # Use a PrefixStore to avoid accidental overrides of keys used by
         # different systems (e.g. RPC) in case the store is multi-tenant.
@@ -56,17 +71,21 @@ def init_process_group(
     # https://github.com/pytorch/pytorch/commit/a0c7029a75628cd5fa8df83c0de0ea98ee7fd844
     # We need to determine the appropriate parameter name based on PyTorch version
     pg_options_param_name = "backend_options" if str(torch.__version__) >= "2.6" else "pg_options"
-    pg, _ = _new_process_group_helper(
-        world_size,
-        rank,
-        [],
-        backend,
-        store,
-        group_name=group_name,
-        **{pg_options_param_name: pg_options},
-        timeout=timeout,
-    )
+    try:
+        pg, _ = _new_process_group_helper(
+            world_size,
+            rank,
+            [],
+            backend,
+            store,
+            group_name=group_name,
+            **{pg_options_param_name: pg_options},
+            timeout=timeout,
+        )
+    except Exception as e:
+        logging.error(f"Failed to create process group: {e}")
+        raise
 
     _world.pg_group_ranks[pg] = {i: i for i in range(world_size)}
-
+    
     return pg

@@ -251,6 +251,34 @@ class MathVerifier:
         
         return max(0.0, base_score * penalty_factor)  # 确保分数不会小于0
 
+def get_response_from_query(q: str, response_prefix: str):
+    """从查询中提取回答内容
+    Args:
+        q: 原始查询字符串
+        response_prefix: 回答的前缀模式
+    Returns:
+        提取出的回答内容
+    """
+    ends_of_sentence = ["。", "<｜end▁of▁sentence｜>", "\n"]
+    response = q[len(response_prefix):].strip()
+    for eos in ends_of_sentence:
+        response = response.split(eos)[0]
+    return response
+
+def get_template_response_from_query(q: str, template: str):
+    """从查询中提取模板回答内容
+    Args:
+        q: 原始查询字符串
+        template: 回答模板
+    Returns:
+        提取出的回答内容
+    """
+    template_pattern = re.compile(template, re.DOTALL)
+    match = template_pattern.search(q)
+    if match:
+        return match.group(0)
+    return ""
+
 def create_app(config: VerifierConfig) -> Tuple[Flask, MathVerifier]:
     """创建Flask应用和验证器"""
     app = Flask(__name__)
@@ -274,7 +302,9 @@ def create_app(config: VerifierConfig) -> Tuple[Flask, MathVerifier]:
                         return jsonify({"error": f"No similar problem found"}), 400
 
                 solution = verifier.problem_to_answer[problem]
-                reward = verifier.calculate_reward(query, solution)
+                response = get_response_from_query(query, "答案：")
+                template_response = get_template_response_from_query(query, r"答案：.*")
+                reward = verifier.calculate_reward(response, solution)
                 rewards.append(reward)
 
                 # 随机打印日志
@@ -295,6 +325,8 @@ def main():
                        help="Datasets to use (comma separated)")
     parser.add_argument("--input-key", type=str, default="prompt",
                        help="The key name of prompt")
+    parser.add_argument("--prompt-template", type=str, required=True,
+                        help="Chat template format (chatml, qwen1, or base)")
     parser.add_argument("--port", type=int, default=5000,
                        help="Server port")
     parser.add_argument("--format-weight", type=float, default=0.3,
@@ -304,6 +336,19 @@ def main():
     parser.add_argument("--repetition-weight", type=float, default=0.2,
                        help="Weight for repetition penalty")
     args = parser.parse_args()
+
+    # 设置模板格式
+    if args.prompt_template == "chatml":
+        problem_pattern = r"<\|im_start\|>user\n(.*?)<\|im_end\|>"
+        response_prefix = r"<\|im_start\|>assistant\n"
+    elif args.prompt_template == "qwen1":
+        problem_pattern = r"｜User｜>(.*?)<｜Assistant｜>"
+        response_prefix = r"<｜Assistant｜>"
+    elif args.prompt_template == "base":
+        problem_pattern = r"User: (.*?)\n\nAssistant:"
+        response_prefix = r"Assistant: "
+    else:
+        raise ValueError(f"Unknown chat format: {args.prompt_template}")
 
     # 创建配置
     config = VerifierConfig(

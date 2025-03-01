@@ -5,8 +5,9 @@ conda create -n openrlhf_new python=3.11 -y
 eval "$(conda shell.bash hook)"
 conda activate openrlhf_new
 
-# Install CUDA toolkit
+# Install CUDA toolkit and OpenMP
 conda install -y cudatoolkit=11.8
+conda install -y libomp
 
 # Install PyTorch with CUDA support
 pip install torch --index-url https://download.pytorch.org/whl/cu118
