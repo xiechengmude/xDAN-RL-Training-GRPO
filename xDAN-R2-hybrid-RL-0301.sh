@@ -48,6 +48,7 @@ ray job submit --address="http://0.0.0.0:8265" \
    --normalize_reward \
    --adam_offload \
    --gradient_checkpointing \
+   --flash_attn \
    --packing_samples \
    --vllm_sync_backend nccl \
    --enforce_eager \
