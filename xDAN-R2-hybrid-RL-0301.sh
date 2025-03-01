@@ -31,21 +31,19 @@ ray job submit --address="http://0.0.0.0:8265" \
    --micro_train_batch_size 2 \
    --train_batch_size 64 \
    --micro_rollout_batch_size 4 \
-   --rollout_batch_size 1024 \
-   --n_samples_per_prompt 8 \
-   --max_epochs 1 \
+   --rollout_batch_size 128 \
+   --n_samples_per_prompt 4 \
+   --max_epochs 2 \
    --prompt_max_len 1024 \
-   --max_samples 100000 \
+   --max_samples 50000 \
    --generate_max_len 1024 \
    --per_device_train_batch_size 1 \
    --gradient_accumulation_steps 4 \
    --zero_stage 3 \
-   --offload_optimizer disk \
-   --offload_param disk \
    --memory_efficient_linear True \
    --actor_learning_rate 5e-7 \
    --critic_learning_rate 9e-6 \
-   --init_kl_coef 1e-4 \
+   --init_kl_coef 0.02 \
    --prompt_data $DATASET \
    --input_key prompt \
    --apply_chat_template \
@@ -53,10 +51,10 @@ ray job submit --address="http://0.0.0.0:8265" \
    --adam_offload \
    --gradient_checkpointing \
    --packing_samples \
-   --vllm_sync_backend gloo \
+   --vllm_sync_backend nccl \
    --enforce_eager \
    --vllm_enable_sleep \
-   --save_steps 200 \
+   --save_steps 10 \
    --ckpt_path $SAVE_PATH/$MODEL_CPK_NAME/ckpt \
    --save_hf_ckpt \
    --use_wandb $SAVE_PATH/$MODEL_CPK_NAME/logs 
