@@ -19,10 +19,11 @@ childpid=$!
 ray job submit --address="http://0.0.0.0:8265" \
    --runtime-env-json='{"working_dir": "/data/vayu/train/xDAN-RL-Training-GRPO", "env_vars": {"MASTER_ADDR": "10.11.50.36", "MASTER_PORT": "24999"}}' \
    -- python3 -m openrlhf.cli.train_ppo_ray \
-   --ref_num_nodes 1 \
+   --ref_num_nodes 2 \
    --ref_num_gpus_per_node 8 \
-   --actor_num_nodes 1 \
+   --actor_num_nodes 2 \
    --actor_num_gpus_per_node 8 \
+   --colocate_actor_ref \
    --vllm_num_engines 2 \
    --vllm_tensor_parallel_size 4 \
    --remote_rm_url http://localhost:5000/get_reward \
@@ -59,6 +60,7 @@ ray job submit --address="http://0.0.0.0:8265" \
    --save_steps 10 \
    --use_wandb $SAVE_PATH/$MODEL_CPK_NAME/logs \
    --bf16 \
+   --trust_remote_code \
    --use_kl_estimator_k3
    # 如果需要使用trust_remote_code，请取消下面这行的注释
    # --trust_remote_code
