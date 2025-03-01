@@ -30,15 +30,15 @@ ray job submit --address="http://0.0.0.0:8265" \
    --save_hf_ckpt \
    --micro_train_batch_size 1 \
    --train_batch_size 32 \
-   --micro_rollout_batch_size 4 \
+   --micro_rollout_batch_size 2 \
    --rollout_batch_size 32 \
-   --n_samples_per_prompt 8 \
+   --n_samples_per_prompt 4 \
    --max_epochs 2 \
    --prompt_max_len 1024 \
    --max_samples 50000 \
    --generate_max_len 4096 \
    --zero_stage 3 \
-   --actor_learning_rate 5e-7 \
+   --actor_learning_rate 3e-7 \
    --critic_learning_rate 9e-6 \
    --init_kl_coef 0.02 \
    --prompt_data $DATASET \
@@ -53,7 +53,10 @@ ray job submit --address="http://0.0.0.0:8265" \
    --vllm_enable_sleep \
    --save_steps 10 \
    --use_wandb $SAVE_PATH/$MODEL_CPK_NAME/logs \
-   --bf16 
+   --bf16 \
+   --use_kl_loss \
+   --use_kl_estimator_k3
+
 # You could also try
 #   --use_kl_loss \
 #   --use_kl_estimator_k3 \
