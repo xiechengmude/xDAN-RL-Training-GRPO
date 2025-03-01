@@ -10,7 +10,7 @@ mkdir -p "${SAVE_PATH}/${MODEL_CPK_NAME}/tensorboard"
 # deploy remote reward function at 127.0.0.1:5000
 python -m openrlhf.models.remote_rm.math_verifier --dataset $DATASET --input_key prompt --prompt-template chatml > "${SAVE_PATH}/${MODEL_CPK_NAME}/remote_rm.log" 2>&1 &
 childpid=$!
-
+#   --colocate_actor_ref \
 
 ray job submit --address="http://0.0.0.0:8265" \
    --runtime-env-json='{"working_dir": "/data/vayu/train/xDAN-RL-Training-GRPO", "env_vars": {"MASTER_ADDR": "10.11.50.36", "MASTER_PORT": "24999"}}' \
@@ -29,9 +29,9 @@ ray job submit --address="http://0.0.0.0:8265" \
    --ckpt_path $SAVE_PATH/$MODEL_CPK_NAME/ckpt \
    --save_hf_ckpt \
    --micro_train_batch_size 1 \
-   --train_batch_size 8 \
+   --train_batch_size 32 \
    --micro_rollout_batch_size 4 \
-   --rollout_batch_size 16 \
+   --rollout_batch_size 32 \
    --n_samples_per_prompt 8 \
    --max_epochs 2 \
    --prompt_max_len 1024 \
