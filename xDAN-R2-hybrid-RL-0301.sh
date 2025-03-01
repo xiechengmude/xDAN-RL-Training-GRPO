@@ -4,8 +4,8 @@ DATASET="/data/vayu/train/xDAN-RL-Training-GRPO/examples/data/xDAN-Terrible-leve
 
 MODEL_CPK_NAME="xDAN-L2-RL-32B-Instruct-0219-RL"
 #PRETRAIN_MODEL="/data/vayu/train/models/xDAN-L2-32b-Reasoning-SFT-Alignment-0216-ckp2364"
-PRETRAIN_MODEL="/data/vayu/train/models/xDAN-L2-Qwen25-32B-Instruct"
-#PRETRAIN_MODEL="/data/vayu/train/models/xDAN-L2-Thinking-Alignment-mixed-0219"
+#PRETRAIN_MODEL="/data/vayu/train/models/xDAN-L2-Qwen25-32B-Instruct"
+PRETRAIN_MODEL="/data/vayu/train/models/xDAN-L2-Thinking-Alignment-mixed-0219"
 SAVE_PATH="/data/vayu/train/models/ckpts"
 mkdir -p "${SAVE_PATH}/${MODEL_CPK_NAME}"
 mkdir -p "${SAVE_PATH}/${MODEL_CPK_NAME}/tensorboard"
@@ -23,7 +23,6 @@ ray job submit --address="http://0.0.0.0:8265" \
    --ref_num_gpus_per_node 8 \
    --actor_num_nodes 1 \
    --actor_num_gpus_per_node 8 \
-   --colocate_actor_ref \
    --vllm_num_engines 1 \
    --vllm_tensor_parallel_size 8 \
    --remote_rm_url http://localhost:5000/get_reward \
@@ -37,7 +36,7 @@ ray job submit --address="http://0.0.0.0:8265" \
    --train_batch_size 16 \
    --micro_rollout_batch_size 1 \
    --rollout_batch_size 16 \
-   --n_samples_per_prompt 8 \
+   --n_samples_per_prompt 4 \
    --max_epochs 2 \
    --prompt_max_len 1024 \
    --max_samples 50000 \
