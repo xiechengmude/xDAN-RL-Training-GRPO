@@ -20,10 +20,10 @@ ray job submit --address="http://0.0.0.0:8265" \
    --ref_num_gpus_per_node 8 \
    --actor_num_nodes 1 \
    --actor_num_gpus_per_node 8 \
-   --vllm_num_engines 1 \
-   --vllm_tensor_parallel_size 8 \
+   --vllm_num_engines 2 \
+   --vllm_tensor_parallel_size 4 \
    --remote_rm_url http://localhost:5000/get_reward \
-   --vllm_gpu_memory_utilization 0.65 \
+   --vllm_gpu_memory_utilization 0.8 \
    --advantage_estimator reinforce_baseline \
    --pretrain $PRETRAIN_MODEL \
    --save_path $SAVE_PATH/$MODEL_CPK_NAME \
@@ -33,7 +33,7 @@ ray job submit --address="http://0.0.0.0:8265" \
    --train_batch_size 16 \
    --micro_rollout_batch_size 1 \
    --rollout_batch_size 16 \
-   --n_samples_per_prompt 4 \
+   --n_samples_per_prompt 8 \
    --max_epochs 2 \
    --prompt_max_len 1024 \
    --max_samples 50000 \
