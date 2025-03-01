@@ -1,5 +1,5 @@
 set -x
-DATASET="./examples/data/xDAN-Terrible-level-math-collection_chatml_rl.json"
+DATASET="examples/data/xDAN-Terrible-level-math-collection_chatml_rl.json"
 
 MODEL_CPK_NAME="xDAN-L2-RL-32B-Instruct"
 PRETRAIN_MODEL="/data/vayu/train/models/xDAN-L2-32b-Reasoning-SFT-Alignment-0216-ckp2364"
@@ -32,15 +32,12 @@ ray job submit --address="http://0.0.0.0:8265" \
    --train_batch_size 64 \
    --micro_rollout_batch_size 4 \
    --rollout_batch_size 128 \
-   --n_samples_per_prompt 4 \
+   --n_samples_per_prompt 8 \
    --max_epochs 2 \
    --prompt_max_len 1024 \
    --max_samples 50000 \
    --generate_max_len 8192 \
-   --per_device_train_batch_size 1 \
-   --gradient_accumulation_steps 4 \
    --zero_stage 3 \
-   --memory_efficient_linear True \
    --actor_learning_rate 5e-7 \
    --critic_learning_rate 9e-6 \
    --init_kl_coef 0.02 \
