@@ -19,7 +19,6 @@ ray job submit --address="http://0.0.0.0:8265" \
    --ref_num_gpus_per_node 8 \
    --actor_num_nodes 1 \
    --actor_num_gpus_per_node 8 \
-   --colocate_actor_ref \
    --vllm_num_engines 2 \
    --vllm_tensor_parallel_size 4 \
    --remote_rm_url http://localhost:5000/get_reward \
