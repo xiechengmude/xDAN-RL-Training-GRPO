@@ -2,7 +2,8 @@ set -x
 DATASET="/data/vayu/train/xDAN-RL-Training-GRPO/examples/data/xDAN-Terrible-level-math-collection_chatml_rl.json"
 
 MODEL_CPK_NAME="xDAN-L2-RL-32B-Instruct"
-PRETRAIN_MODEL="/data/vayu/train/models/xDAN-L2-32b-Reasoning-SFT-Alignment-0216-ckp2364"
+#PRETRAIN_MODEL="/data/vayu/train/models/xDAN-L2-32b-Reasoning-SFT-Alignment-0216-ckp2364"
+PRETRAIN_MODEL="/data/vayu/train/models/xDAN-L2-Qwen25-32B-Instruct"
 SAVE_PATH="./ckpts"
 mkdir -p "${SAVE_PATH}/${MODEL_CPK_NAME}"
 mkdir -p "${SAVE_PATH}/${MODEL_CPK_NAME}/tensorboard"
@@ -55,6 +56,7 @@ ray job submit --address="http://0.0.0.0:8265" \
    --save_steps 10 \
    --use_wandb $SAVE_PATH/$MODEL_CPK_NAME/logs \
    --bf16 \
+   --use_kl_loss \
    --use_kl_estimator_k3 
 
 # You could also try
