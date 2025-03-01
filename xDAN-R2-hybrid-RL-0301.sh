@@ -28,7 +28,7 @@ ray job submit --address="http://0.0.0.0:8265" \
    --save_path $SAVE_PATH/$MODEL_CPK_NAME \
    --ckpt_path $SAVE_PATH/$MODEL_CPK_NAME/ckpt \
    --save_hf_ckpt \
-   --micro_train_batch_size 1 \
+   --micro_train_batch_size 2 \
    --train_batch_size 32 \
    --micro_rollout_batch_size 2 \
    --rollout_batch_size 32 \
@@ -46,14 +46,15 @@ ray job submit --address="http://0.0.0.0:8265" \
    --apply_chat_template \
    --normalize_reward \
    --adam_offload \
-   --gradient_checkpointing 4 \
+   --gradient_checkpointing \
    --packing_samples \
    --vllm_sync_backend nccl \
    --enforce_eager \
    --vllm_enable_sleep \
    --save_steps 10 \
    --use_wandb $SAVE_PATH/$MODEL_CPK_NAME/logs \
-   --bf16 
+   --bf16 \
+   --use_kl_estimator_k3
 
 # You could also try
 #   --use_kl_loss \
