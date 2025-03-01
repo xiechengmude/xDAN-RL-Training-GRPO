@@ -140,6 +140,7 @@ def create_vllm_engines(
     shared_pg=None,
     gpu_memory_utilization=None,
     vllm_enable_sleep=False,
+    trust_remote_code=False,
 ):
     import vllm
 
@@ -198,7 +199,7 @@ def create_vllm_engines(
                 max_model_len=max_model_len,
                 enable_prefix_caching=enable_prefix_caching,
                 dtype="bfloat16",
-                trust_remote_code=True,
+                trust_remote_code=trust_remote_code,
                 num_actors=num_actors,
                 gpu_memory_utilization=gpu_memory_utilization,
                 bundle_indices=bundle_indices if shared_pg else None,

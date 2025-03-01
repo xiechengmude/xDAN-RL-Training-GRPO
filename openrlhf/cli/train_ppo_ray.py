@@ -91,6 +91,7 @@ def train(args):
             pg if args.colocate_all_models else None,
             args.vllm_gpu_memory_utilization,
             args.vllm_enable_sleep,
+            args.trust_remote_code,
         )
 
     actor_model = PPORayActorGroup(
@@ -393,6 +394,10 @@ if __name__ == "__main__":
 
     # ModelScope parameters
     parser.add_argument("--use_ms", action="store_true", default=False)
+    
+    # Model loading parameters
+    parser.add_argument("--trust_remote_code", action="store_true", default=False,
+                      help="Whether to trust remote code when loading models and tokenizers")
 
     args = parser.parse_args()
 
