@@ -15,15 +15,15 @@ childpid=$!
 ray job submit --address="http://0.0.0.0:8265" \
    --runtime-env-json='{"working_dir": "/data/vayu/train/xDAN-RL-Training-GRPO", "env_vars": {"MASTER_ADDR": "10.11.50.36", "MASTER_PORT": "24999"}}' \
    -- python3 -m openrlhf.cli.train_ppo_ray \
-   --ref_num_nodes 2 \
+   --ref_num_nodes 1 \
    --ref_num_gpus_per_node 8 \
-   --actor_num_nodes 2 \
+   --actor_num_nodes 1 \
    --actor_num_gpus_per_node 8 \
    --colocate_actor_ref \
    --vllm_num_engines 2 \
-   --vllm_tensor_parallel_size 4 \
+   --vllm_tensor_parallel_size 8 \
    --remote_rm_url http://localhost:5000/get_reward \
-   --vllm_gpu_memory_utilization 0.85 \
+   --vllm_gpu_memory_utilization 0.7 \
    --advantage_estimator reinforce_baseline \
    --pretrain $PRETRAIN_MODEL \
    --save_path $SAVE_PATH/$MODEL_CPK_NAME \
