@@ -17,9 +17,8 @@ ray job submit --address="http://0.0.0.0:8265" \
    -- python3 -m openrlhf.cli.train_ppo_ray \
    --ref_num_nodes 1 \
    --ref_num_gpus_per_node 8 \
-   --actor_num_nodes 1 \
-   --actor_num_gpus_per_node 8 \
-   --colocate_actor_ref \
+   --actor_num_nodes 2 \
+   --actor_num_gpus_per_node 4 \
    --vllm_num_engines 2 \
    --vllm_tensor_parallel_size 4 \
    --remote_rm_url http://localhost:5000/get_reward \
@@ -47,7 +46,7 @@ ray job submit --address="http://0.0.0.0:8265" \
    --apply_chat_template \
    --normalize_reward \
    --adam_offload \
-   --gradient_checkpointing \
+   --gradient_checkpointing 4 \
    --packing_samples \
    --vllm_sync_backend nccl \
    --enforce_eager \
