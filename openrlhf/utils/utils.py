@@ -4,11 +4,11 @@ from datasets import interleave_datasets, load_dataset, load_from_disk
 from transformers import AutoTokenizer, AutoProcessor, AutoModel
 
 
-def get_vl_processor(pretrain, model, padding_side="left", strategy=None, use_fast=True):
+def get_vl_processor(pretrain, model, padding_side="left", strategy=None, use_fast=True, trust_remote_code=False):
     # TODO: Maybe better max_pixels set methods for other vl model
     min_pixels = int(os.getenv("MIN_PIXELS", 4*28*28))
     max_pixels = int(os.getenv("MAX_PIXELS", 640*28*28))
-    processor = AutoProcessor.from_pretrained(pretrain, trust_remote_code=True, use_fast=use_fast, min_pixels=min_pixels, max_pixels=max_pixels)
+    processor = AutoProcessor.from_pretrained(pretrain, trust_remote_code=trust_remote_code, use_fast=use_fast, min_pixels=min_pixels, max_pixels=max_pixels)
     tokenizer = processor.tokenizer
     tokenizer.padding_side = padding_side
     # NOTE: When enable vLLM, do not resize_token_embeddings, or the vocab size will mismatch with vLLM.
@@ -19,8 +19,8 @@ def get_vl_processor(pretrain, model, padding_side="left", strategy=None, use_fa
         model.config.pad_token_id = tokenizer.pad_token_id
     return processor
 
-def get_tokenizer(pretrain, model, padding_side="left", strategy=None, use_fast=True):
-    tokenizer = AutoTokenizer.from_pretrained(pretrain, trust_remote_code=True, use_fast=use_fast)
+def get_tokenizer(pretrain, model, padding_side="left", strategy=None, use_fast=True, trust_remote_code=False):
+    tokenizer = AutoTokenizer.from_pretrained(pretrain, trust_remote_code=trust_remote_code, use_fast=use_fast)
     tokenizer.padding_side = padding_side
     # NOTE: When enable vLLM, do not resize_token_embeddings, or the vocab size will mismatch with vLLM.
     # https://github.com/facebookresearch/llama-recipes/pull/196
@@ -57,6 +57,7 @@ def blending_datasets(
     stopping_strategy="first_exhausted",
     train_split="train",
     eval_split="test",
+    trust_remote_code=False,
 ):
     datasets = datasets.split(",")
     probabilities = list(map(float, probabilities.split(",")))
@@ -77,7 +78,7 @@ def blending_datasets(
         if ext == ".py" or (
             os.path.isdir(dataset) and os.path.exists(os.path.join(dataset, f"{dataset_basename}.py"))
         ):
-            data = load_dataset(dataset, trust_remote_code=True)
+            data = load_dataset(dataset, trust_remote_code=trust_remote_code)
             strategy.print(f"loaded {dataset} with python script")
         # local text file
         elif ext in [".json", ".jsonl", ".csv"]:

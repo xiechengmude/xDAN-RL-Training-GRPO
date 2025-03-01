@@ -37,6 +37,7 @@ def get_llm_for_sequence_regression(
     value_head_prefix="score",
     device_map=None,
     packing_samples=False,
+    trust_remote_code=False,
     **kwargs,
 ) -> nn.Module:
     """Retrieve a transformer model with a sequence regression head on top.
@@ -59,6 +60,7 @@ def get_llm_for_sequence_regression(
         value_head_prefix (str, optional): Prefix for the value head. Defaults to "score".
         device_map (dict, optional): Map of devices for model loading. Defaults to None.
         packing_samples (bool, optional): Whether to pack samples during training. Defaults to False.
+        trust_remote_code (bool, optional): Whether to trust remote code. Defaults to False.
 
     Returns:
         nn.Module: A pretrained transformer model with a sequence regression head.
@@ -67,7 +69,7 @@ def get_llm_for_sequence_regression(
         model_type == "critic" or model_type == "reward"
     ), f"invalid model_type: {model_type}, should be critic or reward."
 
-    config = AutoConfig.from_pretrained(model_name_or_path, trust_remote_code=True)
+    config = AutoConfig.from_pretrained(model_name_or_path, trust_remote_code=trust_remote_code)
     config.normalize_reward = normalize_reward
     config._attn_implementation = "flash_attention_2" if use_flash_attention_2 else "eager"
 
@@ -102,7 +104,7 @@ def get_llm_for_sequence_regression(
     model = cls_class.from_pretrained(
         model_name_or_path,
         config=config,
-        trust_remote_code=True,
+        trust_remote_code=trust_remote_code,
         torch_dtype=torch.bfloat16 if bf16 else "auto",
         quantization_config=nf4_config,
         device_map=device_map,

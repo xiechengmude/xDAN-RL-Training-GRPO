@@ -31,6 +31,7 @@ class Actor(nn.Module):
         ds_config (dict, optional): Configuration for DeepSpeed, enabling model partitioning across multiple GPUs. Defaults to None.
         device_map (dict, optional): Device mapping for loading the model onto specific devices. Defaults to None.
         packing_samples (bool, optional): Whether to pack samples during training. Defaults to False.
+        trust_remote_code (bool, optional): Whether to trust remote code when loading the model. Defaults to False.
     """
 
     def __init__(
@@ -46,6 +47,7 @@ class Actor(nn.Module):
         ds_config=None,
         device_map=None,
         packing_samples=False,
+        trust_remote_code=False,
         **kwargs,
     ) -> None:
         super().__init__()
@@ -76,7 +78,7 @@ class Actor(nn.Module):
             model_cls = get_generation_cls(config)
             self.model = model_cls.from_pretrained(
                 pretrain_or_model,
-                trust_remote_code=True,
+                trust_remote_code=trust_remote_code,
                 attn_implementation=attn_implementation,
                 quantization_config=nf4_config,
                 torch_dtype=torch.bfloat16 if bf16 else "auto",

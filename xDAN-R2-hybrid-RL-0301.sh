@@ -1,3 +1,4 @@
+#!/bin/bash
 set -x
 DATASET="/data/vayu/train/xDAN-RL-Training-GRPO/examples/data/xDAN-Terrible-level-math-collection_chatml_rl.json"
 
@@ -5,9 +6,10 @@ MODEL_CPK_NAME="xDAN-L2-RL-32B-Instruct-0219-RL"
 #PRETRAIN_MODEL="/data/vayu/train/models/xDAN-L2-32b-Reasoning-SFT-Alignment-0216-ckp2364"
 #PRETRAIN_MODEL="/data/vayu/train/models/xDAN-L2-Qwen25-32B-Instruct"
 PRETRAIN_MODEL="/data/vayu/train/models/xDAN-L2-Thinking-Alignment-mixed-0219"
-SAVE_PATH="./ckpts"
+SAVE_PATH="/data/vayu/train/models/ckpts"
 mkdir -p "${SAVE_PATH}/${MODEL_CPK_NAME}"
 mkdir -p "${SAVE_PATH}/${MODEL_CPK_NAME}/tensorboard"
+mkdir -p "${SAVE_PATH}/${MODEL_CPK_NAME}/logs"
 
 # deploy remote reward function at 127.0.0.1:5000
 python -m openrlhf.models.remote_rm.math_verifier --dataset $DATASET --input_key prompt --prompt-template chatml > "${SAVE_PATH}/${MODEL_CPK_NAME}/remote_rm.log" 2>&1 &
@@ -57,7 +59,9 @@ ray job submit --address="http://0.0.0.0:8265" \
    --save_steps 10 \
    --use_wandb $SAVE_PATH/$MODEL_CPK_NAME/logs \
    --bf16 \
-   --use_kl_estimator_k3 
+   --use_kl_estimator_k3
+   # 如果需要使用trust_remote_code，请取消下面这行的注释
+   # --trust_remote_code
 
 # You could also try
 #   --use_kl_loss \
