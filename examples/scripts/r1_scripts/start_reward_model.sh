@@ -1,8 +1,8 @@
 #!/bin/bash
 
 # 配置参数
-DATASET="/data/vayu/train/xDAN-RL-Training-GRPO/examples/data/mathlv345_8k_chatml.json"
-MODEL_NAME="xDAN-L2-RL-32B-Instruct"
+DATASET="/data/vayu/train/xDAN-RL-Training-GRPO/examples/data/xDAN-level5-math-aime-chatml.json"
+MODEL_NAME="xDAN-L2-RL-32B-Instruct-RL-0304"
 SAVE_PATH="/data/vayu/train/ckpts"
 PORT=5000
 
