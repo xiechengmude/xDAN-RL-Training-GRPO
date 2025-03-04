@@ -1,10 +1,10 @@
 #!/bin/bash
 
 # Configuration
-DATASET="/data/vayu/train/datasets/math/xDAN_Agentic_openMath_r1_full.json"
-DATASET="/data/vayu/train/xDAN-RL-Training-GRPO/examples/data/xDAN-Terrible-level-math-collection_chatml_rl.json"
+# DATASET="/data/vayu/train/xDAN-RL-Training-GRPO/examples/data/xDAN-Terrible-level-math-collection_chatml_rl.json"
+DATASET="/data/vayu/train/xDAN-RL-Training-GRPO/examples/data/xDAN-level5-math-aime-chatml.json"
 
-MODEL_CPK_NAME="xDAN-L2-RL-32B-Instruct"
+MODEL_CPK_NAME="xDAN-L2-RL-32B-Instruct-RL-0304"
 SAVE_PATH="./ckpts"
 
 # Create directories
