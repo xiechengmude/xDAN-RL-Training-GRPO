@@ -1,10 +1,8 @@
 set -x
-DATASET="/data/vayu/train/xDAN-RL-Training-GRPO/examples/data/xDAN-level5-math-aime-chatml.json"
+DATASET="/data/vayu/train/xDAN-RL-Training-GRPO/examples/data/xDAN-Terrible-level-math-collection_chatml_rl.json"
 
-MODEL_CPK_NAME="xDAN-L2-RL-32B-Instruct-RL-0304"
-#PRETRAIN_MODEL="/data/vayu/train/models/xDAN-L2-Thinking-Alignment-mixed-0219"
+MODEL_CPK_NAME="xDAN-L2-RL-32B-Instruct"
 PRETRAIN_MODEL="/data/vayu/train/models/xDAN-L2-32b-Reasoning-SFT-Alignment-0216-ckp2364"
-
 SAVE_PATH="./ckpts"
 mkdir -p "${SAVE_PATH}/${MODEL_CPK_NAME}"
 mkdir -p "${SAVE_PATH}/${MODEL_CPK_NAME}/tensorboard"
@@ -13,16 +11,24 @@ mkdir -p "${SAVE_PATH}/${MODEL_CPK_NAME}/tensorboard"
 python -m openrlhf.models.remote_rm.math_verifier --dataset $DATASET --input_key prompt --prompt-template chatml > "${SAVE_PATH}/${MODEL_CPK_NAME}/remote_rm.log" 2>&1 &
 childpid=$!
 
+# 设置NCCL相关环境变量以提高稳定性
+export NCCL_DEBUG=INFO
+export NCCL_IB_DISABLE=0
+export NCCL_IB_TIMEOUT=23
+export NCCL_IB_RETRY_CNT=7
+export NCCL_SOCKET_IFNAME=eth0
+export NCCL_ASYNC_ERROR_HANDLING=1
+export NCCL_P2P_LEVEL=NVL
 
 ray job submit --address="http://0.0.0.0:8265" \
-   --runtime-env-json='{"working_dir": "/data/vayu/train/xDAN-RL-Training-GRPO", "env_vars": {"MASTER_ADDR": "10.11.50.36", "MASTER_PORT": "24999"}}' \
+   --runtime-env-json='{"working_dir": "/data/vayu/train/xDAN-RL-Training-GRPO", "env_vars": {"MASTER_ADDR": "10.11.50.36", "MASTER_PORT": "24999", "NCCL_DEBUG": "INFO", "NCCL_IB_TIMEOUT": "23", "NCCL_IB_RETRY_CNT": "7", "NCCL_ASYNC_ERROR_HANDLING": "1"}}' \
    -- python3 -m openrlhf.cli.train_ppo_ray \
    --ref_num_nodes 1 \
-   --ref_num_gpus_per_node 8 \
-   --actor_num_nodes 2 \
-   --actor_num_gpus_per_node 8 \
-   --vllm_num_engines 1 \
-   --vllm_tensor_parallel_size 8 \
+   --ref_num_gpus_per_node 4 \
+   --actor_num_nodes 1 \
+   --actor_num_gpus_per_node 4 \
+   --vllm_num_engines 2 \
+   --vllm_tensor_parallel_size 4 \
    --remote_rm_url http://localhost:5000/get_reward \
    --vllm_gpu_memory_utilization 0.8 \
    --advantage_estimator rloo \
@@ -32,14 +38,14 @@ ray job submit --address="http://0.0.0.0:8265" \
    --save_hf_ckpt \
    --micro_train_batch_size 1 \
    --train_batch_size 32 \
-   --micro_rollout_batch_size 8 \
-   --rollout_batch_size 128 \
+   --micro_rollout_batch_size 4 \
+   --rollout_batch_size 64 \
    --n_samples_per_prompt 8 \
-   --max_epochs 1 \
+   --max_epochs 2 \
    --prompt_max_len 1024 \
    --max_samples 50000 \
-   --generate_max_len 4096 \
-   --zero_stage 3 \
+   --generate_max_len 8192 \
+   --zero_stage 2 \
    --bf16 \
    --actor_learning_rate 5e-7 \
    --critic_learning_rate 9e-6 \
@@ -54,12 +60,10 @@ ray job submit --address="http://0.0.0.0:8265" \
    --vllm_sync_backend nccl \
    --enforce_eager \
    --vllm_enable_sleep \
-   --save_steps 4 \
+   --save_steps 10 \
    --ckpt_path $SAVE_PATH/$MODEL_CPK_NAME/ckpt \
    --save_hf_ckpt \
-   --use_kl_estimator_k3 \
-   --trust_remote_code \
-   --use_wandb 1b2653c58df0ccf5b38f3ffa1bf21b78d48fd620
+   --use_wandb $SAVE_PATH/$MODEL_CPK_NAME/logs 
 # You could also try
 #   --use_kl_loss \
 #   --use_kl_estimator_k3 \

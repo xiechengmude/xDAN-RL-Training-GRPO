@@ -22,26 +22,26 @@ ray job submit --address="http://0.0.0.0:8265" \
    -- python3 -m openrlhf.cli.train_ppo_ray \
    --ref_num_nodes 1 \
    --ref_num_gpus_per_node 8 \
-   --actor_num_nodes 1 \
+   --actor_num_nodes 2 \
    --actor_num_gpus_per_node 8 \
    --vllm_num_engines 1 \
    --vllm_tensor_parallel_size 8 \
    --remote_rm_url http://localhost:5000/get_reward \
-   --vllm_gpu_memory_utilization 0.7 \
+   --vllm_gpu_memory_utilization 0.75 \
    --advantage_estimator rloo \
    --pretrain $PRETRAIN_MODEL \
    --save_path $SAVE_PATH/$MODEL_CPK_NAME \
    --ckpt_path $SAVE_PATH/$MODEL_CPK_NAME/ckpt \
    --save_hf_ckpt \
    --micro_train_batch_size 1 \
-   --train_batch_size 8 \
+   --train_batch_size 16 \
    --micro_rollout_batch_size 4 \
-   --rollout_batch_size 32 \
-   --n_samples_per_prompt 16 \
-   --max_epochs 2 \
+   --rollout_batch_size 64 \
+   --n_samples_per_prompt 8 \
+   --max_epochs 1 \
    --prompt_max_len 1024 \
    --max_samples 50000 \
-   --generate_max_len 8192 \
+   --generate_max_len 4096 \
    --zero_stage 3 \
    --actor_learning_rate 3e-7 \
    --critic_learning_rate 9e-6 \
@@ -58,7 +58,7 @@ ray job submit --address="http://0.0.0.0:8265" \
    --enforce_eager \
    --vllm_enable_sleep \
    --save_steps 10 \
-   --use_wandb $SAVE_PATH/$MODEL_CPK_NAME/logs \
+   --use_wandb 1b2653c58df0ccf5b38f3ffa1bf21b78d48fd620 \
    --bf16 \
    --trust_remote_code \
    --use_kl_estimator_k3
