@@ -1,0 +1,5 @@
+Found 3 files to upload
+Uploading files:   0%|          | 0/3 [00:00<?, ?it/s]Uploading files: 100%|██████████| 3/3 [00:00<00:00, 51781.53it/s]
+Failed to upload model-00004-of-00004.safetensors: 'HubApi' object has no attribute 'upload_model_file'
+Failed to upload .DS_Store: 'HubApi' object has no attribute 'upload_model_file'
+Failed to upload model-00003-of-00004.safetensors: 'HubApi' object has no attribute 'upload_model_file'

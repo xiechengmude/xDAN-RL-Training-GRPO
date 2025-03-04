@@ -41,25 +41,24 @@ def convert_to_chatml(dataset, sample_ratio=1.0):
         answer = item['answer'].strip()
         
         # Convert llama8b_solve_rate to difficulty level (1-5)
-        solve_rate = item['llama8b_solve_rate']
-        if solve_rate <= 0.05:
-            level = 5
-        elif solve_rate <= 0.15:
-            level = 4
-        elif solve_rate <= 0.30:
-            level = 3
-        elif solve_rate <= 0.50:
-            level = 2
-        else:
-            level = 1
+        # solve_rate = item['llama8b_solve_rate']
+        # if solve_rate <= 0.05:
+        #     level = 5
+        # elif solve_rate <= 0.15:
+        #     level = 4
+        # elif solve_rate <= 0.30:
+        #     level = 3
+        # elif solve_rate <= 0.50:
+        #     level = 2
+        # else:
+        #     level = 1
         
         # Format the prompt in ChatML format with <|im_start|> and <|im_end|> tags
         prompt = f"<|im_start|>system\n{system_msg}<|im_end|>\n<|im_start|>user\n{problem}<|im_end|>\n<|im_start|>assistant\n"
         
         chatml_entry = {
             "prompt": prompt,
-            "answer": answer,
-            "level": level
+            "answer": answer
         }
         
         chatml_data.append(chatml_entry)
@@ -70,11 +69,11 @@ def main():
     parser = argparse.ArgumentParser(description='Convert dataset to ChatML format with sampling')
     parser.add_argument('--sample_ratio', type=float, default=1.0,
                       help='Ratio of data to sample (between 0 and 1)')
-    parser.add_argument('--output', type=str, default='mathlv345_8k_chatml.json',
+    parser.add_argument('--output', type=str, default='xDAN-level5-math-aime-chatml.json',
                       help='Output file name')
     args = parser.parse_args()
     
-    dataset = load_dataset("xDAN2099/xDAN-Terrible-level-math-collection", split="train")
+    dataset = load_dataset("xDAN2099/xDAN-level5-math-aime", split="train")
     chatml_data = convert_to_chatml(dataset, args.sample_ratio)
     
     with open(args.output, 'w', encoding='utf-8') as f:
