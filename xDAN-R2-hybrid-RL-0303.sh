@@ -46,7 +46,6 @@ ray job submit --address="http://0.0.0.0:8265" \
    --init_kl_coef 0.02 \
    --prompt_data $DATASET \
    --input_key prompt \
-   --apply_chat_template \
    --normalize_reward \
    --adam_offload \
    --gradient_checkpointing \

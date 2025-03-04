@@ -57,7 +57,7 @@ ray job submit --address="http://0.0.0.0:8265" \
    --vllm_sync_backend nccl \
    --enforce_eager \
    --vllm_enable_sleep \
-   --save_steps 10 \
+   --save_steps 4 \
    --use_wandb 1b2653c58df0ccf5b38f3ffa1bf21b78d48fd620 \
    --bf16 \
    --trust_remote_code \
