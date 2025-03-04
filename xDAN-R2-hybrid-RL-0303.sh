@@ -29,7 +29,7 @@ ray job submit --address="http://0.0.0.0:8265" \
    --ckpt_path $SAVE_PATH/$MODEL_CPK_NAME/ckpt \
    --save_hf_ckpt \
    --micro_train_batch_size 2 \
-   --train_batch_size 16 \
+   --train_batch_size 32 \
    --micro_rollout_batch_size 8 \
    --rollout_batch_size 128 \
    --n_samples_per_prompt 8 \
