@@ -4,7 +4,7 @@
 # DATASET="/data/vayu/train/xDAN-RL-Training-GRPO/examples/data/xDAN-Terrible-level-math-collection_chatml_rl.json"
 DATASET="/data/vayu/train/xDAN-RL-Training-GRPO/examples/data/xDAN-level5-math-aime-chatml.json"
 
-MODEL_CPK_NAME="xDAN-L2-RL-32B-Instruct-0219-RL-level5-math-0304"
+MODEL_CPK_NAME="xDAN-L2-RL-32B-Instruct-0219-RL-level5-math-0305"
 SAVE_PATH="./ckpts"
 
 # Create directories
