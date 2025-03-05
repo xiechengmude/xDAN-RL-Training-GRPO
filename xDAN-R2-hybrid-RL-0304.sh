@@ -4,13 +4,13 @@ set -x
 # NCCL环境变量设置，增强容错能力
 export NCCL_DEBUG=INFO
 export NCCL_IB_TIMEOUT=23
-export NCCL_SOCKET_IFNAME=eth0  # 如果需要，请替换为实际的网络接口名
+# 配置网络接口
+export NCCL_SOCKET_IFNAME=ibs13  # 指定使用ibs13接口
 export NCCL_ASYNC_ERROR_HANDLING=1
-# 启用InfiniBand并指定设备
-# export NCCL_P2P_DISABLE=1
-# export NCCL_IB_DISABLE=1
-export NCCL_IB_HCA=mlx5  # 使用通配符匹配所有mlx5设备，NCCL会自动选择活跃的设备
+# 启用InfiniBand
+export NCCL_IB_HCA=mlx5  # 使用通配符匹配所有mlx5设备
 export NCCL_IB_CUDA_SUPPORT=1  # 启用CUDA-IB直接通信
+export NCCL_IB_DISABLE=0  # 确保启用InfiniBand
 
 DATASET="/data/vayu/train/xDAN-RL-Training-GRPO/examples/data/xDAN-level5-math-aime-chatml.json"
 
@@ -29,14 +29,15 @@ python -m openrlhf.models.remote_rm.math_verifier --dataset $DATASET --input_key
 childpid=$!
 #   --colocate_actor_ref \
 
-# 创建包含InfiniBand环境变量的JSON配置
+# Ray环境变量配置
 IB_ENV_VARS='{
   "NCCL_DEBUG": "INFO",
   "NCCL_IB_TIMEOUT": "23",
-  "NCCL_SOCKET_IFNAME": "eth0",
+  "NCCL_SOCKET_IFNAME": "ibs13",
   "NCCL_ASYNC_ERROR_HANDLING": "1",
   "NCCL_IB_HCA": "mlx5",
   "NCCL_IB_CUDA_SUPPORT": "1",
+  "NCCL_IB_DISABLE": "0",
   "MASTER_ADDR": "10.11.50.36",
   "MASTER_PORT": "24999"
 }'
