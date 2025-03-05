@@ -1,13 +1,7 @@
 #!/bin/bash
 set -x
 
-# # 指定NCCL使用ibs13接口
-# export NCCL_SOCKET_IFNAME=ibs13
-# # 添加NCCL参数解决消息截断问题
-# export NCCL_DEBUG=INFO
-# export NCCL_IB_TIMEOUT=23
-# export NCCL_ASYNC_ERROR_HANDLING=1
-# # 增加缓冲区大小和超时设置
+# 添加NCCL参数解决消息截断问题
 export NCCL_BUFFSIZE=63554432
 export NCCL_SOCKET_NTHREADS=8
 export NCCL_NSOCKS_PERTHREAD=8
@@ -32,21 +26,6 @@ python -m openrlhf.models.remote_rm.math_verifier --dataset $DATASET --input_key
 childpid=$!
 #   --colocate_actor_ref \
 
-# Ray环境变量配置
-# IB_ENV_VARS='{
-#   "NCCL_SOCKET_IFNAME": "ibs13",
-#   "NCCL_DEBUG": "INFO",
-#   "NCCL_IB_TIMEOUT": "23",
-#   "NCCL_ASYNC_ERROR_HANDLING": "1",
-#   "NCCL_BUFFSIZE": "33554432",
-#   "NCCL_SOCKET_NTHREADS": "8",
-#   "NCCL_NSOCKS_PERTHREAD": "8",
-#   "NCCL_MIN_NCHANNELS": "8",
-#   "NCCL_MAX_NCHANNELS": "16",
-#   "MASTER_ADDR": "10.11.50.36",
-#   "MASTER_PORT": "24999"
-# }'
-
 ray job submit --address="http://0.0.0.0:8265" \
    --runtime-env-json='{"working_dir": "/data/vayu/train/xDAN-RL-Training-GRPO", "env_vars": {"MASTER_ADDR": "10.11.50.36", "MASTER_PORT": "24999"}}' \
    -- python3 -m openrlhf.cli.train_ppo_ray \
@@ -56,7 +35,7 @@ ray job submit --address="http://0.0.0.0:8265" \
    --actor_num_gpus_per_node 8 \
    --vllm_num_engines 1 \
    --vllm_tensor_parallel_size 8 \
-   --remote_rm_url http://localhost:5000/get_reward \
+   --remote_rm_url http://gpu004:5000/get_reward \
    --vllm_gpu_memory_utilization 0.75 \
    --advantage_estimator rloo \
    --pretrain $PRETRAIN_MODEL \
@@ -83,7 +62,7 @@ ray job submit --address="http://0.0.0.0:8265" \
    --gradient_checkpointing \
    --flash_attn \
    --packing_samples \
-   --vllm_sync_backend nccl \
+   --vllm_sync_backend gloo \   #gloo nccl
    --enforce_eager \
    --vllm_enable_sleep \
    --save_steps 4 \
