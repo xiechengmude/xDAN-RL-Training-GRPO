@@ -1,16 +1,8 @@
 #!/bin/bash
 set -x
 
-# NCCL环境变量设置，增强容错能力
-export NCCL_DEBUG=INFO
-export NCCL_IB_TIMEOUT=23
-# 配置网络接口
-export NCCL_SOCKET_IFNAME=ibs13  # 指定使用ibs13接口
-export NCCL_ASYNC_ERROR_HANDLING=1
-# 启用InfiniBand
-export NCCL_IB_HCA=mlx5  # 使用通配符匹配所有mlx5设备
-export NCCL_IB_CUDA_SUPPORT=1  # 启用CUDA-IB直接通信
-export NCCL_IB_DISABLE=0  # 确保启用InfiniBand
+# 指定NCCL使用ibs13接口
+export NCCL_SOCKET_IFNAME=ibs13
 
 DATASET="/data/vayu/train/xDAN-RL-Training-GRPO/examples/data/xDAN-level5-math-aime-chatml.json"
 
@@ -31,13 +23,7 @@ childpid=$!
 
 # Ray环境变量配置
 IB_ENV_VARS='{
-  "NCCL_DEBUG": "INFO",
-  "NCCL_IB_TIMEOUT": "23",
   "NCCL_SOCKET_IFNAME": "ibs13",
-  "NCCL_ASYNC_ERROR_HANDLING": "1",
-  "NCCL_IB_HCA": "mlx5",
-  "NCCL_IB_CUDA_SUPPORT": "1",
-  "NCCL_IB_DISABLE": "0",
   "MASTER_ADDR": "10.11.50.36",
   "MASTER_PORT": "24999"
 }'
@@ -98,24 +84,24 @@ ray job submit --address="http://0.0.0.0:8265" \
 # 计数save steps
 #grep -c "model.layers.63.post_attention_layernorm.weight" xDAN-RL-32b-hybrid-0301.log
 
-# 验证InfiniBand配置
-echo "===== 验证InfiniBand配置 ====="
-echo "NCCL配置已设置为允许使用InfiniBand"
-echo "NCCL_DEBUG=$NCCL_DEBUG"
-echo "NCCL_IB_DISABLE=${NCCL_IB_DISABLE:-未设置(启用)}"
-echo "NCCL_P2P_DISABLE=${NCCL_P2P_DISABLE:-未设置(启用)}"
+# # 验证InfiniBand配置
+# echo "===== 验证InfiniBand配置 ====="
+# echo "NCCL配置已设置为允许使用InfiniBand"
+# echo "NCCL_DEBUG=$NCCL_DEBUG"
+# echo "NCCL_IB_DISABLE=${NCCL_IB_DISABLE:-未设置(启用)}"
+# echo "NCCL_P2P_DISABLE=${NCCL_P2P_DISABLE:-未设置(启用)}"
 
-# 检查InfiniBand设备
-if command -v ibstat &> /dev/null; then
-    echo "===== InfiniBand设备状态 ====="
-    ibstat | grep -E "CA |State:"
-else
-    echo "未找到ibstat命令，无法检查InfiniBand设备状态"
-fi
+# # 检查InfiniBand设备
+# if command -v ibstat &> /dev/null; then
+#     echo "===== InfiniBand设备状态 ====="
+#     ibstat | grep -E "CA |State:"
+# else
+#     echo "未找到ibstat命令，无法检查InfiniBand设备状态"
+# fi
 
-# 提示查看NCCL日志
-echo "===== 如何验证InfiniBand正在使用 ====="
-echo "请在训练日志中查找以下内容："
-echo "  - 'NCCL INFO NET/IB: Using [x] IB devices' (表示检测到InfiniBand设备)"
-echo "  - 'NCCL INFO NET/IB: Selected dev mlx5_x' (表示选择了InfiniBand设备)"
-echo "  - 如果看不到上述日志，可能表示InfiniBand未被使用"
+# # 提示查看NCCL日志
+# echo "===== 如何验证InfiniBand正在使用 ====="
+# echo "请在训练日志中查找以下内容："
+# echo "  - 'NCCL INFO NET/IB: Using [x] IB devices' (表示检测到InfiniBand设备)"
+# echo "  - 'NCCL INFO NET/IB: Selected dev mlx5_x' (表示选择了InfiniBand设备)"
+# echo "  - 如果看不到上述日志，可能表示InfiniBand未被使用"
