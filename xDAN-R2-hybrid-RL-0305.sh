@@ -1,14 +1,14 @@
 #!/bin/bash
 set -x
 
-# 指定NCCL使用ibs13接口
-export NCCL_SOCKET_IFNAME=ibs13
-# 添加NCCL参数解决消息截断问题
-export NCCL_DEBUG=INFO
-export NCCL_IB_TIMEOUT=23
-export NCCL_ASYNC_ERROR_HANDLING=1
-# 增加缓冲区大小和超时设置
-export NCCL_BUFFSIZE=33554432
+# # 指定NCCL使用ibs13接口
+# export NCCL_SOCKET_IFNAME=ibs13
+# # 添加NCCL参数解决消息截断问题
+# export NCCL_DEBUG=INFO
+# export NCCL_IB_TIMEOUT=23
+# export NCCL_ASYNC_ERROR_HANDLING=1
+# # 增加缓冲区大小和超时设置
+export NCCL_BUFFSIZE=63554432
 export NCCL_SOCKET_NTHREADS=8
 export NCCL_NSOCKS_PERTHREAD=8
 # 添加额外的稳定性设置
@@ -33,22 +33,22 @@ childpid=$!
 #   --colocate_actor_ref \
 
 # Ray环境变量配置
-IB_ENV_VARS='{
-  "NCCL_SOCKET_IFNAME": "ibs13",
-  "NCCL_DEBUG": "INFO",
-  "NCCL_IB_TIMEOUT": "23",
-  "NCCL_ASYNC_ERROR_HANDLING": "1",
-  "NCCL_BUFFSIZE": "33554432",
-  "NCCL_SOCKET_NTHREADS": "8",
-  "NCCL_NSOCKS_PERTHREAD": "8",
-  "NCCL_MIN_NCHANNELS": "8",
-  "NCCL_MAX_NCHANNELS": "16",
-  "MASTER_ADDR": "10.11.50.36",
-  "MASTER_PORT": "24999"
-}'
+# IB_ENV_VARS='{
+#   "NCCL_SOCKET_IFNAME": "ibs13",
+#   "NCCL_DEBUG": "INFO",
+#   "NCCL_IB_TIMEOUT": "23",
+#   "NCCL_ASYNC_ERROR_HANDLING": "1",
+#   "NCCL_BUFFSIZE": "33554432",
+#   "NCCL_SOCKET_NTHREADS": "8",
+#   "NCCL_NSOCKS_PERTHREAD": "8",
+#   "NCCL_MIN_NCHANNELS": "8",
+#   "NCCL_MAX_NCHANNELS": "16",
+#   "MASTER_ADDR": "10.11.50.36",
+#   "MASTER_PORT": "24999"
+# }'
 
 ray job submit --address="http://0.0.0.0:8265" \
-   --runtime-env-json="{\"working_dir\": \"/data/vayu/train/xDAN-RL-Training-GRPO\", \"env_vars\": ${IB_ENV_VARS}}" \
+   --runtime-env-json='{"working_dir": "/data/vayu/train/xDAN-RL-Training-GRPO", "env_vars": {"MASTER_ADDR": "10.11.50.36", "MASTER_PORT": "24999"}}' \
    -- python3 -m openrlhf.cli.train_ppo_ray \
    --ref_num_nodes 1 \
    --ref_num_gpus_per_node 8 \
@@ -102,25 +102,3 @@ ray job submit --address="http://0.0.0.0:8265" \
 # also supports --advantage_estimator rloo | reinforce_baseline
 # 计数save steps
 #grep -c "model.layers.63.post_attention_layernorm.weight" xDAN-RL-32b-hybrid-0301.log
-
-# # 验证InfiniBand配置
-# echo "===== 验证InfiniBand配置 ====="
-# echo "NCCL配置已设置为允许使用InfiniBand"
-# echo "NCCL_DEBUG=$NCCL_DEBUG"
-# echo "NCCL_IB_DISABLE=${NCCL_IB_DISABLE:-未设置(启用)}"
-# echo "NCCL_P2P_DISABLE=${NCCL_P2P_DISABLE:-未设置(启用)}"
-
-# # 检查InfiniBand设备
-# if command -v ibstat &> /dev/null; then
-#     echo "===== InfiniBand设备状态 ====="
-#     ibstat | grep -E "CA |State:"
-# else
-#     echo "未找到ibstat命令，无法检查InfiniBand设备状态"
-# fi
-
-# # 提示查看NCCL日志
-# echo "===== 如何验证InfiniBand正在使用 ====="
-# echo "请在训练日志中查找以下内容："
-# echo "  - 'NCCL INFO NET/IB: Using [x] IB devices' (表示检测到InfiniBand设备)"
-# echo "  - 'NCCL INFO NET/IB: Selected dev mlx5_x' (表示选择了InfiniBand设备)"
-# echo "  - 如果看不到上述日志，可能表示InfiniBand未被使用"
