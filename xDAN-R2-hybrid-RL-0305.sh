@@ -50,7 +50,7 @@ ray job submit --address="http://0.0.0.0:8265" \
    --max_epochs 1 \
    --prompt_max_len 2048 \
    --max_samples 50000 \
-   --generate_max_len 8192 \
+   --generate_max_len 6000 \
    --zero_stage 3 \
    --actor_learning_rate 3e-7 \
    --critic_learning_rate 9e-6 \
