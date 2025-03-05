@@ -62,7 +62,7 @@ ray job submit --address="http://0.0.0.0:8265" \
    --gradient_checkpointing \
    --flash_attn \
    --packing_samples \
-   --vllm_sync_backend gloo \
+   --vllm_sync_backend ncll \
    --enable_prefix_caching \
    --enforce_eager \
    --vllm_enable_sleep \
