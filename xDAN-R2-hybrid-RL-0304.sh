@@ -3,6 +3,17 @@ set -x
 
 # 指定NCCL使用ibs13接口
 export NCCL_SOCKET_IFNAME=ibs13
+# 添加NCCL参数解决消息截断问题
+export NCCL_DEBUG=INFO
+export NCCL_IB_TIMEOUT=23
+export NCCL_ASYNC_ERROR_HANDLING=1
+# 增加缓冲区大小和超时设置
+export NCCL_BUFFSIZE=33554432
+export NCCL_SOCKET_NTHREADS=8
+export NCCL_NSOCKS_PERTHREAD=8
+# 添加额外的稳定性设置
+export NCCL_MIN_NCHANNELS=8
+export NCCL_MAX_NCHANNELS=16
 
 DATASET="/data/vayu/train/xDAN-RL-Training-GRPO/examples/data/xDAN-level5-math-aime-chatml.json"
 
@@ -24,6 +35,14 @@ childpid=$!
 # Ray环境变量配置
 IB_ENV_VARS='{
   "NCCL_SOCKET_IFNAME": "ibs13",
+  "NCCL_DEBUG": "INFO",
+  "NCCL_IB_TIMEOUT": "23",
+  "NCCL_ASYNC_ERROR_HANDLING": "1",
+  "NCCL_BUFFSIZE": "33554432",
+  "NCCL_SOCKET_NTHREADS": "8",
+  "NCCL_NSOCKS_PERTHREAD": "8",
+  "NCCL_MIN_NCHANNELS": "8",
+  "NCCL_MAX_NCHANNELS": "16",
   "MASTER_ADDR": "10.11.50.36",
   "MASTER_PORT": "24999"
 }'
