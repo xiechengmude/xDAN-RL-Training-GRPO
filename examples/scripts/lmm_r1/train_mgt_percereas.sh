@@ -7,7 +7,7 @@
 export WORKSPACE_DIR="$(pwd)"                      # Path to project root directory
 export DATASET_PATH="./data/VerMulti/mathv60k_message.jsonl"  # Path to your dataset
 export PRETRAIN_MODEL_PATH="./checkpoints/lmm-r1-fre-text/"  # Path to pretrained model
-export SAVE_PATH="./checkpoints"                   # Path to save checkpoints
+export SAVE_PATH="/checkpoints"                   # Absolute path to save checkpoints
 
 # Model configuration
 export MODEL_NAME="lmm-r1-mgt-percereason"        # Name for this training run
@@ -95,12 +95,12 @@ ray job submit --address="http://127.0.0.1:8265" \
    --num_episodes 2 \
    --prompt_max_len 4096 \
    --max_samples 100000 \
-   --generate_max_len 8000 \
+   --generate_max_len 8192 \
    --advantage_estimator reinforce_baseline \
    --zero_stage 3 \
    --bf16 \
    --actor_learning_rate 4e-7 \
-   --init_kl_coef 0.0 \
+   --init_kl_coef 0.001 \
    --prompt_data ${DATASET_PATH} \
    --input_key message \
    --normalize_reward \
